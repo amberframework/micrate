@@ -1,5 +1,3 @@
-require "option_parser"
-
 module Micrate
   module Cli
     def self.run_up
@@ -25,12 +23,15 @@ module Micrate
       end
 
       migration_file = Micrate.create(ARGV.shift, Micrate.migrations_dir, Time.now)
-
       puts "micrate: created #{migration_file}"
     end
 
     def self.run_dbversion
-      puts "TO-DO"
+      begin
+        puts "micrate: dbversion #{Micrate.dbversion}"
+      rescue
+        puts "Could not read dbversion. Please make sure the database exists and verify the connection URL."
+      end
     end
 
     def self.help
