@@ -1,8 +1,13 @@
 require "./micrate/*"
 
 module Micrate
+
   def self.db_dir
     "db"
+  end
+
+  def self.migrations_dir
+    File.join(db_dir, "migrations")
   end
 
   def self.create(name, dir, time)
