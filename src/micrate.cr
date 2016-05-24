@@ -21,18 +21,29 @@ module Micrate
   end
 
   def self.up(db)
-    current = dbversion(db)
     all_migrations = migrations_by_version
+
+    current = dbversion(db)
     target = all_migrations.keys.sort.last
     migrate(all_migrations, current, target, db)
   end
 
   def self.down(db)
-    current = dbversion(db)
     all_migrations = migrations_by_version
-    all_versions = all_migrations.keys
-    target = previous_version(current, all_versions)
+
+    current = dbversion(db)
+    target = previous_version(current, all_migrations.keys)
     migrate(all_migrations, current, target, db)
+  end
+
+  def self.redo(db)
+    all_migrations = migrations_by_version
+
+    current = dbversion(db)
+    previous = previous_version(current, all_migrations.keys)
+
+    migrate(all_migrations, current, previous, db)
+    migrate(all_migrations, previous, current, db)
   end
 
   def self.migrate(all_migrations, current, target, db)

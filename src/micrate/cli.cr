@@ -2,7 +2,11 @@ module Micrate
   module Cli
     def self.run_up
       DB.connect do |db|
-        Micrate.up(db)
+        begin
+          Micrate.up(db)
+        rescue e: Exception
+          puts e.message
+        end
       end
     end
 
@@ -17,7 +21,13 @@ module Micrate
     end
 
     def self.run_redo
-      puts "TO-DO"
+      DB.connect do |db|
+        begin
+          Micrate.redo(db)
+        rescue e : Exception
+          puts e.message
+        end
+      end
     end
 
     def self.run_status
