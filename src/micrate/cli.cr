@@ -1,7 +1,7 @@
 module Micrate
   module Cli
     def self.run_up
-      puts "TO-DO"
+      Micrate.up
     end
 
     def self.run_down

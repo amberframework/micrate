@@ -30,4 +30,37 @@ describe Micrate do
     end
   end
 
+  describe "up" do
+
+    context "going forward" do
+      it "runs all migrations if starting from clean db" do
+        plan = Micrate.migration_plan(sample_migrations, 0, 20160523142316, :forward)
+        plan.should eq([20160523142308, 20160523142313, 20160523142316])
+      end
+
+      it "skips already performed migrations" do
+        plan = Micrate.migration_plan(sample_migrations, 20160523142308, 20160523142316, :forward)
+        plan.should eq([20160523142313, 20160523142316])
+      end
+    end
+
+    context "going backwards" do
+      it "skips already performed migrations" do
+        plan = Micrate.migration_plan(sample_migrations, 20160523142316, 20160523142308, :backwards)
+        plan.should eq([20160523142316, 20160523142313])
+      end
+    end
+
+
+  end
+
 end
+
+def sample_migrations
+  [
+    20160523142308,
+    20160523142313,
+    20160523142316
+  ]
+end
+
