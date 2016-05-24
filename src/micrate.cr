@@ -46,6 +46,17 @@ module Micrate
     migrate(all_migrations, previous, current, db)
   end
 
+  def self.migration_status(db)
+    # ensure that migration table exists
+    dbversion(db)
+
+    ({} of Migration => String).tap do |ret|
+      migrations_by_version.values.each do |m|
+        ret[m] = DB.get_migration_status(m, db).to_s
+      end
+    end
+  end
+
   def self.migrate(all_migrations, current, target, db)
     direction = current < target ? :forward : :backwards
 
@@ -71,15 +82,14 @@ module Micrate
 
   def self.previous_version(current, all_versions)
     all_previous = all_versions.select { |version| version < current }
-    
     if !all_previous.empty?
       return all_previous.max
     end
 
     if all_versions.includes? current
-			# the given version is (likely) valid but we didn't find
-			# anything before it.
-			# return value must reflect that no migrations have been applied.
+      # the given version is (likely) valid but we didn't find
+      # anything before it.
+      # return value must reflect that no migrations have been applied.
       return 0
     else
       raise "no previous version found"

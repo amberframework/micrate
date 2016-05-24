@@ -4,7 +4,7 @@ module Micrate
       DB.connect do |db|
         begin
           Micrate.up(db)
-        rescue e: Exception
+        rescue e : Exception
           puts e.message
         end
       end
@@ -31,7 +31,14 @@ module Micrate
     end
 
     def self.run_status
-      puts "TO-DO"
+      DB.connect do |db|
+        puts "micrate: status"
+        puts "    Applied At                  Migration"
+        puts "    ======================================="
+        Micrate.migration_status(db).each do |migration, migrated_at|
+          puts "    %-24s -- %s\n" % [migrated_at, migration.name]
+        end
+      end
     end
 
     def self.run_create
@@ -52,7 +59,6 @@ module Micrate
           puts "Could not read dbversion. Please make sure the database exists and verify the connection URL."
         end
       end
-
     end
 
     def self.help

@@ -66,7 +66,7 @@ module Micrate
     def self.from_file(file_name)
       full_path = File.join(Micrate.migrations_dir, file_name)
       version = file_name.split("_")[0].to_i64
-      new(version, name, File.read(full_path))
+      new(version, file_name, File.read(full_path))
     end
   end
 end

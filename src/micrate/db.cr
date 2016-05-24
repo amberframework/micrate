@@ -41,5 +41,15 @@ module Micrate
       is_applied = direction == :forward
       db.exec("INSERT INTO micrate_db_version (version_id, is_applied) VALUES ($1, $2);", [migration.version, is_applied])
     end
+
+    def self.get_migration_status(migration, db)
+      rows = db.exec({Time, Bool}, "SELECT tstamp, is_applied FROM micrate_db_version WHERE version_id=$1 ORDER BY tstamp DESC LIMIT 1", [migration.version]).rows
+
+      if !rows.empty? && rows[0][1]
+        rows[0][0]
+      else
+        "Pending"
+      end
+    end
   end
 end
