@@ -10,35 +10,29 @@ module Micrate
     File.join(db_dir, "migrations")
   end
 
-  def self.dbversion
-    DB.connect do |db|
-      begin
-        rows = DB.get_versions_last_first_order(db)
-        return extract_dbversion(rows)
-      rescue Exception
-        DB.create_migrations_table(db)
-        return 0
-      end
+  def self.dbversion(db)
+    begin
+      rows = DB.get_versions_last_first_order(db)
+      return extract_dbversion(rows)
+    rescue Exception
+      DB.create_migrations_table(db)
+      return 0
     end
   end
 
-  def self.up
-    DB.connect do |db|
-      current = dbversion
-      all_migrations = migrations_by_version
-      target = all_migrations.keys.sort.last
-      migrate(all_migrations, current, target, db)
-    end
+  def self.up(db)
+    current = dbversion(db)
+    all_migrations = migrations_by_version
+    target = all_migrations.keys.sort.last
+    migrate(all_migrations, current, target, db)
   end
 
-  def self.down
-    DB.connect do |db|
-      current = dbversion
-      all_migrations = migrations_by_version
-      all_versions = all_migrations.keys
-      target = previous_version(current, all_versions)
-      migrate(all_migrations, current, target, db)
-    end
+  def self.down(db)
+    current = dbversion(db)
+    all_migrations = migrations_by_version
+    all_versions = all_migrations.keys
+    target = previous_version(current, all_versions)
+    migrate(all_migrations, current, target, db)
   end
 
   def self.migrate(all_migrations, current, target, db)

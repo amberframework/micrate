@@ -1,14 +1,18 @@
 module Micrate
   module Cli
     def self.run_up
-      Micrate.up
+      DB.connect do |db|
+        Micrate.up(db)
+      end
     end
 
     def self.run_down
-      begin
-        Micrate.down
-      rescue e : Exception
-        puts e.message
+      DB.connect do |db|
+        begin
+          Micrate.down(db)
+        rescue e : Exception
+          puts e.message
+        end
       end
     end
 
@@ -31,11 +35,14 @@ module Micrate
     end
 
     def self.run_dbversion
-      begin
-        puts "micrate: dbversion #{Micrate.dbversion}"
-      rescue
-        puts "Could not read dbversion. Please make sure the database exists and verify the connection URL."
+      DB.connect do |db|
+        begin
+          puts "micrate: dbversion #{Micrate.dbversion(db)}"
+        rescue
+          puts "Could not read dbversion. Please make sure the database exists and verify the connection URL."
+        end
       end
+
     end
 
     def self.help
