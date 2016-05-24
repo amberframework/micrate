@@ -2,13 +2,17 @@ require "pg"
 
 module Micrate
   module DB
-    @@connection_url : String?
+    @@connection_url = ENV["PG_URL"]?
 
     def self.connection_url=(connection_url)
       @@connection_url = connection_url
     end
 
     def self.connect
+      if !@@connection_url
+        raise "No postgresql connection URL is configured. Please set the PG_URL environment variable."
+      end
+
       PG.connect(@@connection_url.not_nil!)
     end
 

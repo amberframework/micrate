@@ -2,31 +2,19 @@ module Micrate
   module Cli
     def self.run_up
       DB.connect do |db|
-        begin
-          Micrate.up(db)
-        rescue e : Exception
-          puts e.message
-        end
+        Micrate.up(db)
       end
     end
 
     def self.run_down
       DB.connect do |db|
-        begin
-          Micrate.down(db)
-        rescue e : Exception
-          puts e.message
-        end
+        Micrate.down(db)
       end
     end
 
     def self.run_redo
       DB.connect do |db|
-        begin
-          Micrate.redo(db)
-        rescue e : Exception
-          puts e.message
-        end
+        Micrate.redo(db)
       end
     end
 
@@ -83,22 +71,27 @@ Commands:
         return
       end
 
-      case ARGV.shift
-      when "up"
-        run_up
-      when "down"
-        run_down
-      when "redo"
-        run_redo
-      when "status"
-        run_status
-      when "create"
-        run_create
-      when "dbversion"
-        run_dbversion
-      else
-        puts help
+      begin
+        case ARGV.shift
+        when "up"
+          run_up
+        when "down"
+          run_down
+        when "redo"
+          run_redo
+        when "status"
+          run_status
+        when "create"
+          run_create
+        when "dbversion"
+          run_dbversion
+        else
+          puts help
+        end
+      rescue e: Exception
+        puts e.message
       end
+
     end
   end
 end
