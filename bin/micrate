@@ -1,0 +1,4 @@
+#! /usr/bin/env crystal
+require "../src/micrate"
+
+Micrate::Cli.run
