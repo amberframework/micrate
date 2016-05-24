@@ -1,5 +1,4 @@
 require "./micrate/*"
-require "pg"
 
 module Micrate
   def self.db_dir
@@ -72,7 +71,13 @@ module Micrate
     plan.each do |version|
       migration = all_migrations[version]
       begin
-        DB.execute_migration(migration, direction, db)
+        migration.statements(direction).each do |stmt|
+          DB.exec(stmt, db)
+        end
+
+        DB.record_migration(migration, direction, db)
+
+        puts "OK   #{migration.name}"
       rescue e : Exception
         puts "An error ocurred executing migration #{migration.version}. Error message is: #{e.message}"
         return
@@ -104,14 +109,14 @@ module Micrate
        .index_by { |migration| migration.version }
   end
 
-  def self.migration_plan(all_migrations, current, target, direction)
+  def self.migration_plan(all_versions, current, target, direction)
     if direction == :forward
-      all_migrations.sort
-                    .select { |v| v > current && v <= target }
+      all_versions.sort
+                  .select { |v| v > current && v <= target }
     else
-      all_migrations.sort
-                    .reverse
-                    .select { |v| v <= current && v > target }
+      all_versions.sort
+                  .reverse
+                  .select { |v| v <= current && v > target }
     end
   end
 

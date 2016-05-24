@@ -1,3 +1,5 @@
+require "pg"
+
 module Micrate
   module DB
     @@connection_url : String?
@@ -33,13 +35,13 @@ module Micrate
               );")
     end
 
-    def self.execute_migration(migration, direction, db)
-      migration.statements(direction).each do |stmt|
-        db.exec(stmt)
-      end
-
+    def self.record_migration(migration, direction, db)
       is_applied = direction == :forward
       db.exec("INSERT INTO micrate_db_version (version_id, is_applied) VALUES ($1, $2);", [migration.version, is_applied])
+    end
+
+    def self.exec(statement, db)
+      db.exec(statement)
     end
 
     def self.get_migration_status(migration, db)
