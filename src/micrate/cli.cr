@@ -5,7 +5,11 @@ module Micrate
     end
 
     def self.run_down
-      puts "TO-DO"
+      begin
+        Micrate.down
+      rescue e : Exception
+        puts e.message
+      end
     end
 
     def self.run_redo

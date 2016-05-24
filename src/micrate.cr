@@ -24,29 +24,60 @@ module Micrate
 
   def self.up
     DB.connect do |db|
-      all_migrations = migrations_by_version
       current = dbversion
+      all_migrations = migrations_by_version
       target = all_migrations.keys.sort.last
-      direction = current < target ? :forward : :backwards
+      migrate(all_migrations, current, target, db)
+    end
+  end
 
-      plan = migration_plan(all_migrations.keys, current, target, direction)
+  def self.down
+    DB.connect do |db|
+      current = dbversion
+      all_migrations = migrations_by_version
+      all_versions = all_migrations.keys
+      target = previous_version(current, all_versions)
+      migrate(all_migrations, current, target, db)
+    end
+  end
 
-      if plan.empty?
-        puts "micrate: no migrations to run. current version: #{current}"
+  def self.migrate(all_migrations, current, target, db)
+    direction = current < target ? :forward : :backwards
+
+    plan = migration_plan(all_migrations.keys, current, target, direction)
+
+    if plan.empty?
+      puts "micrate: no migrations to run. current version: #{current}"
+      return
+    end
+
+    puts "micrate: migrating db, current version: #{current}, target: #{target}"
+
+    plan.each do |version|
+      migration = all_migrations[version]
+      begin
+        DB.execute_migration(migration, direction, db)
+      rescue e : Exception
+        puts "An error ocurred executing migration #{migration.version}. Error message is: #{e.message}"
         return
       end
+    end
+  end
 
-      puts "micrate: migrating db, current version: #{current}, target: #{target}"
+  def self.previous_version(current, all_versions)
+    all_previous = all_versions.select { |version| version < current }
+    
+    if !all_previous.empty?
+      return all_previous.max
+    end
 
-      plan.each do |version|
-        migration = all_migrations[version]
-        begin
-          DB.execute_migration(migration, direction, db)
-        rescue e : Exception
-          puts "An error ocurred executing migration #{migration.version}. Error message is: #{e.message}"
-          return
-        end
-      end
+    if all_versions.includes? current
+			# the given version is (likely) valid but we didn't find
+			# anything before it.
+			# return value must reflect that no migrations have been applied.
+      return 0
+    else
+      raise "no previous version found"
     end
   end
 
