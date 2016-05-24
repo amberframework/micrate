@@ -1,7 +1,6 @@
 require "./spec_helper"
 
 describe Micrate do
-
   describe "dbversion" do
     it "returns 0 if table is empty" do
       rows = [] of {Int64, Bool}
@@ -31,7 +30,6 @@ describe Micrate do
   end
 
   describe "up" do
-
     context "going forward" do
       it "runs all migrations if starting from clean db" do
         plan = Micrate.migration_plan(sample_migrations, 0, 20160523142316, :forward)
@@ -50,17 +48,13 @@ describe Micrate do
         plan.should eq([20160523142316, 20160523142313])
       end
     end
-
-
   end
-
 end
 
 def sample_migrations
   [
     20160523142308,
     20160523142313,
-    20160523142316
+    20160523142316,
   ]
 end
-

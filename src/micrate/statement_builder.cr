@@ -19,4 +19,3 @@ module Micrate
     end
   end
 end
-
