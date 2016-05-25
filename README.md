@@ -40,7 +40,7 @@ $ bin/micrate dbversion
 
 ## Usage
 
-Execute `micrate help` for usage instruction.
+Execute `micrate help` for usage instructions. Micrate will connect to the postgres database specified by the `PG_URL` environment variable. Support for other database engines and better configuration options is on the way!
 
 To create a new migration use the `create` subcommand. For example, `micrate create add_users_table` will create a new SQL migration file with a name such as `db/migrations/20160524162446_add_users_table.sql` that looks like this:
 
@@ -89,7 +89,7 @@ micrate: status
 
 ## Contributing
 
-1. Fork it ( https://github.com/[your-github-name]/micrate/fork )
+1. Fork it ( https://github.com/juanedi/micrate/fork )
 2. Create your feature branch (git checkout -b my-new-feature)
 3. Commit your changes (git commit -am 'Add some feature')
 4. Push to the branch (git push origin my-new-feature)
