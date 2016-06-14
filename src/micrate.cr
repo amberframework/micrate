@@ -79,11 +79,23 @@ module Micrate
     DB.connection_url = connection_url
   end
 
+  def self.unordered_migrations(db)
+    current_version = dbversion(db)
+
+    migration_status(db).select { |migration, migrated_at| migrated_at == "Pending" }
+                        .select { |migration, migrated_at| migration.version < current_version }
+                        .keys
+  end
+
   # ---------------------------------
   # Private
   # ---------------------------------
 
   private def self.migrate(all_migrations, current, target, db)
+    if !unordered_migrations(db).empty?
+      raise "You seem to have some out of order migrations. Run `micrate check` for more information."
+    end
+
     direction = current < target ? :forward : :backwards
 
     plan = migration_plan(all_migrations.keys, current, target, direction)
