@@ -68,5 +68,12 @@ module Micrate
       version = file_name.split("_")[0].to_i64
       new(version, file_name, File.read(full_path))
     end
+
+    def self.from_version(version)
+      file_name = Dir.entries(Micrate.migrations_dir)
+                     .find { |name| name.starts_with? version.to_s  }
+                     .not_nil!
+      self.from_file(file_name)
+    end
   end
 end
