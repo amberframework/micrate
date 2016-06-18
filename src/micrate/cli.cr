@@ -24,7 +24,8 @@ module Micrate
         puts "    Applied At                  Migration"
         puts "    ======================================="
         Micrate.migration_status(db).each do |migration, migrated_at|
-          puts "    %-24s -- %s\n" % [migrated_at, migration.name]
+          ts = migrated_at.nil? ? "Pending" : migrated_at.to_s
+          puts "    %-24s -- %s\n" % [ts, migration.name]
         end
       end
     end
@@ -49,24 +50,19 @@ module Micrate
       end
     end
 
-    def self.check
-      DB.connect do |db|
-        conflicting = Micrate.unordered_migrations(db)
-
-        puts "micrate: check"
-        if !conflicting.empty?
-          puts "The following migrations haven't been applied but have a timestamp older then the current version:"
-          conflicting.each do |migration|
-            puts "    #{migration.name}"
-          end
-          puts
-          puts "Micrate will not run these migrations because they may have been written with an older database model in mind."
-          puts "You should probably check if they need to be updated and rename them so they are considered a newer version."
-          exit 1
-        else
-          puts "OK!"
-          exit 0
+    def self.report_unordered_migrations(conflicting)
+      if !conflicting.empty?
+        puts "The following migrations haven't been applied but have a timestamp older then the current version:"
+        conflicting.each do |version|
+          puts "    #{Migration.from_version(version).name}"
         end
+        puts
+        puts "Micrate will not run these migrations because they may have been written with an older database model in mind."
+        puts "You should probably check if they need to be updated and rename them so they are considered a newer version."
+        exit 1
+      else
+        puts "OK!"
+        exit 0
       end
     end
 
@@ -106,11 +102,11 @@ Commands:
           run_create
         when "dbversion"
           run_dbversion
-        when "check"
-          check
         else
           puts help
         end
+      rescue e: UnorderedMigrationsException
+        report_unordered_migrations(e.versions)
       rescue e: Exception
         puts e.message
       end

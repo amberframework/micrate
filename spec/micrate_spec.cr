@@ -48,13 +48,27 @@ describe Micrate do
         plan.should eq([20160523142316, 20160523142313])
       end
     end
+
+    describe "detecting unordered migrations" do 
+      it "fails if there are unapplied migrations with older timestamp than current version" do
+        migrations = {
+          20160523142308 => false,
+          20160523142313 => true,
+          20160523142316 => false,
+        }
+
+        expect_raises(Micrate::UnorderedMigrationsException) do
+          Micrate.migration_plan(migrations, 20160523142313, 20160523142316, :forward)
+        end
+      end
+    end
   end
 end
 
 def sample_migrations
-  [
-    20160523142308,
-    20160523142313,
-    20160523142316,
-  ]
+  {
+    20160523142308 => true,
+    20160523142313 => true,
+    20160523142316 => true,
+  }
 end

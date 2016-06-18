@@ -45,13 +45,16 @@ module Micrate
     migrate(all_migrations, previous, current, db)
   end
 
-  def self.migration_status(db)
+  def self.migration_status(db) : Hash(Migration, Time?)
     # ensure that migration table exists
     dbversion(db)
-
-    ({} of Migration => String).tap do |ret|
-      migrations_by_version.values.each do |m|
-        ret[m] = DB.get_migration_status(m, db).to_s
+    migration_status(migrations_by_version.values, db) 
+  end
+  
+  def self.migration_status(migrations : Array(Migration), db) : Hash(Migration, Time?)
+    ({} of Migration => Time?).tap do |ret|
+      migrations.each do |m|
+        ret[m] = DB.get_migration_status(m, db)
       end
     end
   end
@@ -79,26 +82,15 @@ module Micrate
     DB.connection_url = connection_url
   end
 
-  def self.unordered_migrations(db)
-    current_version = dbversion(db)
-
-    migration_status(db).select { |migration, migrated_at| migrated_at == "Pending" }
-                        .select { |migration, migrated_at| migration.version < current_version }
-                        .keys
-  end
-
   # ---------------------------------
   # Private
   # ---------------------------------
 
-  private def self.migrate(all_migrations, current, target, db)
-    if !unordered_migrations(db).empty?
-      raise "You seem to have some out of order migrations. Run `micrate check` for more information."
-    end
-
+  private def self.migrate(all_migrations : Hash(Int, Migration), current : Int, target : Int, db)
     direction = current < target ? :forward : :backwards
 
-    plan = migration_plan(all_migrations.keys, current, target, direction)
+    status = migration_status(all_migrations.values, db)
+    plan = migration_plan(status, current, target, direction)
 
     if plan.empty?
       puts "micrate: no migrations to run. current version: #{current}"
@@ -124,6 +116,16 @@ module Micrate
     end
   end
 
+  private def self.verify_unordered_migrations(current, status : Hash(Int, Bool))
+    migrations = status.select { |version, is_applied| !is_applied && version < current }
+                       .keys
+
+    if !migrations.empty?
+      raise UnorderedMigrationsException.new(migrations)
+    end
+  end
+
+
   private def self.previous_version(current, all_versions)
     all_previous = all_versions.select { |version| version < current }
     if !all_previous.empty?
@@ -148,12 +150,24 @@ module Micrate
        .index_by { |migration| migration.version }
   end
 
-  def self.migration_plan(all_versions, current, target, direction)
+  def self.migration_plan(status : Hash(Migration, Time?), current : Int, target : Int, direction)
+    status = ({} of Int64 => Bool).tap do |h|
+               status.each { |migration, migrated_at| h[migration.version] = !migrated_at.nil? }
+             end
+
+    migration_plan(status, current, target, direction)
+  end
+
+  def self.migration_plan(all_versions : Hash(Int, Bool), current : Int, target : Int, direction)
+    verify_unordered_migrations(current, all_versions)
+
     if direction == :forward
-      all_versions.sort
+      all_versions.keys
+                  .sort
                   .select { |v| v > current && v <= target }
     else
-      all_versions.sort
+      all_versions.keys
+                  .sort
                   .reverse
                   .select { |v| v <= current && v > target }
     end
@@ -177,5 +191,14 @@ module Micrate
     end
 
     return 0
+  end
+
+  class UnorderedMigrationsException < Exception
+
+    getter :versions
+
+    def initialize(@versions : Array(Int64))
+      super()
+    end
   end
 end
