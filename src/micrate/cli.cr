@@ -46,6 +46,7 @@ module Micrate
           puts "micrate: dbversion #{Micrate.dbversion(db)}"
         rescue
           puts "Could not read dbversion. Please make sure the database exists and verify the connection URL."
+          exit 1
         end
       end
     end
@@ -107,8 +108,10 @@ Commands:
         end
       rescue e: UnorderedMigrationsException
         report_unordered_migrations(e.versions)
+        exit 1
       rescue e: Exception
         puts e.message
+        exit 1
       end
 
     end
