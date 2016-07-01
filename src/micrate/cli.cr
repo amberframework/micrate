@@ -32,8 +32,7 @@ module Micrate
 
     def self.run_create
       if ARGV.size < 1
-        puts "micrate create: migration name required"
-        return
+        raise "micrate create: migration name required"
       end
 
       migration_file = Micrate.create(ARGV.shift, Micrate.migrations_dir, Time.now)
@@ -45,26 +44,19 @@ module Micrate
         begin
           puts "micrate: dbversion #{Micrate.dbversion(db)}"
         rescue
-          puts "Could not read dbversion. Please make sure the database exists and verify the connection URL."
-          exit 1
+          raise "Could not read dbversion. Please make sure the database exists and verify the connection URL."
         end
       end
     end
 
     def self.report_unordered_migrations(conflicting)
-      if !conflicting.empty?
-        puts "The following migrations haven't been applied but have a timestamp older then the current version:"
-        conflicting.each do |version|
-          puts "    #{Migration.from_version(version).name}"
-        end
-        puts
-        puts "Micrate will not run these migrations because they may have been written with an older database model in mind."
-        puts "You should probably check if they need to be updated and rename them so they are considered a newer version."
-        exit 1
-      else
-        puts "OK!"
-        exit 0
+      puts "The following migrations haven't been applied but have a timestamp older then the current version:"
+      conflicting.each do |version|
+        puts "    #{Migration.from_version(version).name}"
       end
+      puts
+      puts "Micrate will not run these migrations because they may have been written with an older database model in mind."
+      puts "You should probably check if they need to be updated and rename them so they are considered a newer version."
     end
 
     def self.help
@@ -117,3 +109,4 @@ Commands:
     end
   end
 end
+
