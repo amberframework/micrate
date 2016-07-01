@@ -93,11 +93,11 @@ module Micrate
     plan = migration_plan(status, current, target, direction)
 
     if plan.empty?
-      puts "micrate: no migrations to run. current version: #{current}"
+      puts "No migrations to run. current version: #{current}"
       return
     end
 
-    puts "micrate: migrating db, current version: #{current}, target: #{target}"
+    puts "Migrating db, current version: #{current}, target: #{target}"
 
     plan.each do |version|
       migration = all_migrations[version]

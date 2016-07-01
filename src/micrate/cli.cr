@@ -20,29 +20,28 @@ module Micrate
 
     def self.run_status
       DB.connect do |db|
-        puts "micrate: status"
-        puts "    Applied At                  Migration"
-        puts "    ======================================="
+        puts "Applied At                  Migration"
+        puts "======================================="
         Micrate.migration_status(db).each do |migration, migrated_at|
           ts = migrated_at.nil? ? "Pending" : migrated_at.to_s
-          puts "    %-24s -- %s\n" % [ts, migration.name]
+          puts "%-24s -- %s\n" % [ts, migration.name]
         end
       end
     end
 
     def self.run_create
       if ARGV.size < 1
-        raise "micrate create: migration name required"
+        raise "Migration name required"
       end
 
       migration_file = Micrate.create(ARGV.shift, Micrate.migrations_dir, Time.now)
-      puts "micrate: created #{migration_file}"
+      puts "Created #{migration_file}"
     end
 
     def self.run_dbversion
       DB.connect do |db|
         begin
-          puts "micrate: dbversion #{Micrate.dbversion(db)}"
+          puts Micrate.dbversion(db)
         rescue
           raise "Could not read dbversion. Please make sure the database exists and verify the connection URL."
         end
