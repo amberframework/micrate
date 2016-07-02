@@ -1,6 +1,8 @@
 require "./micrate/*"
 
 module Micrate
+  @@logger : Logger?
+
   def self.db_dir
     "db"
   end
@@ -93,11 +95,11 @@ module Micrate
     plan = migration_plan(status, current, target, direction)
 
     if plan.empty?
-      puts "No migrations to run. current version: #{current}"
+      logger.info "No migrations to run. current version: #{current}"
       return
     end
 
-    puts "Migrating db, current version: #{current}, target: #{target}"
+    logger.info "Migrating db, current version: #{current}, target: #{target}"
 
     plan.each do |version|
       migration = all_migrations[version]
@@ -108,9 +110,9 @@ module Micrate
 
         DB.record_migration(migration, direction, db)
 
-        puts "OK   #{migration.name}"
+        logger.info "OK   #{migration.name}"
       rescue e : Exception
-        puts "An error ocurred executing migration #{migration.version}. Error message is: #{e.message}"
+        logger.info "An error ocurred executing migration #{migration.version}. Error message is: #{e.message}"
         return
       end
     end
@@ -191,6 +193,16 @@ module Micrate
     end
 
     return 0
+  end
+
+  def self.logger
+    @@logger ||= Logger.new(STDOUT).tap do |l|
+      l.level = Logger::UNKNOWN
+    end
+  end
+
+  def self.logger=(logger)
+    @@logger = logger
   end
 
   class UnorderedMigrationsException < Exception

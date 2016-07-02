@@ -1,3 +1,5 @@
+require "logger"
+
 module Micrate
   module Cli
     def self.run_up
@@ -53,13 +55,13 @@ module Micrate
       conflicting.each do |version|
         puts "    #{Migration.from_version(version).name}"
       end
-      puts
-      puts "Micrate will not run these migrations because they may have been written with an older database model in mind."
-      puts "You should probably check if they need to be updated and rename them so they are considered a newer version."
+      puts "
+Micrate will not run these migrations because they may have been written with an older database model in mind.
+You should probably check if they need to be updated and rename them so they are considered a newer version."
     end
 
-    def self.help
-      "micrate is a database migration management system for Crystal projects, *heavily* inspired by Goose (https://bitbucket.org/liamstask/goose/).
+    def self.print_help
+      puts "micrate is a database migration management system for Crystal projects, *heavily* inspired by Goose (https://bitbucket.org/liamstask/goose/).
 
 Usage:
     micrate [options] <subcommand> [subcommand options]
@@ -70,13 +72,14 @@ Commands:
     redo       Re-run the latest migration
     status     dump the migration status for the current DB
     create     Create the scaffolding for a new migration
-    dbversion  Print the current version of the database
-      "
+    dbversion  Print the current version of the database"
     end
 
     def self.run
+      setup_logger
+
       if ARGV.empty?
-        puts help
+        print_help
         return
       end
 
@@ -95,7 +98,7 @@ Commands:
         when "dbversion"
           run_dbversion
         else
-          puts help
+          print_help
         end
       rescue e: UnorderedMigrationsException
         report_unordered_migrations(e.versions)
@@ -104,7 +107,15 @@ Commands:
         puts e.message
         exit 1
       end
+    end
 
+    def self.setup_logger
+      Micrate.logger = Logger.new(STDOUT).tap do |l|
+        l.level = Logger::INFO
+        l.formatter = Logger::Formatter.new do |severity, datetime, progname, message, io|
+          io << message
+        end
+      end
     end
   end
 end
