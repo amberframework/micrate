@@ -9,6 +9,10 @@ module Micrate
     def initialize(@version : Int64, @name : String, @source : String)
     end
 
+    # Algorithm ported from Goose
+    #
+    # Complex statements cannot be resolved by just splitting the script by semicolons.
+    # In this cases we allow using StatementBegin and StatementEnd directives as hints.
     def statements(direction)
       statements = [] of String
 
