@@ -1,3 +1,4 @@
+require "db"
 require "pg"
 
 module Micrate
@@ -9,24 +10,19 @@ module Micrate
     end
 
     def self.connect
-      if !@@connection_url
-        raise "No postgresql connection URL is configured. Please set the PG_URL environment variable."
-      end
-
-      PG.connect(@@connection_url.not_nil!)
+      validate_connection_url
+      ::DB.connect(@@connection_url.not_nil!)
     end
 
     def self.connect(&block)
-      db = connect
-      begin
+      validate_connection_url
+      ::DB.open @@connection_url.not_nil! do |db|
         yield db
-      ensure
-        db.close
       end
     end
 
     def self.get_versions_last_first_order(db)
-      db.exec({Int64, Bool}, "SELECT version_id, is_applied from micrate_db_version ORDER BY id DESC").rows
+      db.query_all "SELECT version_id, is_applied from micrate_db_version ORDER BY id DESC", as: {Int64, Bool}
     end
 
     def self.create_migrations_table(db)
@@ -49,12 +45,18 @@ module Micrate
     end
 
     def self.get_migration_status(migration, db) : Time?
-      rows = db.exec({Time, Bool}, "SELECT tstamp, is_applied FROM micrate_db_version WHERE version_id=$1 ORDER BY tstamp DESC LIMIT 1", [migration.version]).rows
+      rows = db.query_all "SELECT tstamp, is_applied FROM micrate_db_version WHERE version_id=$1 ORDER BY tstamp DESC LIMIT 1", migration.version, as: {Time, Bool}
 
       if !rows.empty? && rows[0][1]
         rows[0][0]
       else
         nil
+      end
+    end
+
+    private def self.validate_connection_url
+      if !@@connection_url
+        raise "No postgresql connection URL is configured. Please set the PG_URL environment variable."
       end
     end
   end
