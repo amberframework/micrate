@@ -8,6 +8,9 @@ This is still a work in progress!
 
 ## Installation
 
+Micrate runs as either a standalone binary that you "just run" to manipulate the database,
+or you can call it from your Crystal code in the same way.
+
 To install the standalone binary tool check out the releases page, or use homebrew:
 
 ```
@@ -23,7 +26,10 @@ dependencies:
     github: juanedi/micrate
 ```
 
-This allows you to programatically use micrate's features. You'll see the `Micrate` module has an equivalent for every CLI command. If you need to use micrate's CLI without installing the tool (which could be convenient in a CI environment) you can create a simple script like the following:
+This allows you to programatically use micrate's features. 
+You'll see the `Micrate` module has an equivalent for every CLI command, so you can call those methods.
+If you want to use micrate's CLI without installing the tool (which could be convenient in a CI environment) 
+you can create a simple script like the following (we'll call it bin/micrate in this case):
 
 ```crystal
 #! /usr/bin/env crystal
