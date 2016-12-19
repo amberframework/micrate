@@ -2,7 +2,7 @@ require "db"
 
 module Micrate
   module DB
-    @@connection_url = ENV["PG_URL"]?
+    @@connection_url = ENV["DB_URL"]?
 
     def self.connection_url=(connection_url)
       @@connection_url = connection_url
@@ -55,7 +55,7 @@ module Micrate
 
     private def self.validate_connection_url
       if !@@connection_url
-        raise "No postgresql connection URL is configured. Please set the PG_URL environment variable."
+        raise "No database connection URL is configured. Please set the DB_URL environment variable."
       end
     end
   end

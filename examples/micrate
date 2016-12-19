@@ -8,4 +8,5 @@
 require "../src/micrate"
 require "pg"
 
+Micrate::DB.connection_url = "postgresql://..."
 Micrate::Cli.run
