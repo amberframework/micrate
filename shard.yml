@@ -7,7 +7,3 @@ authors:
 dependencies:
   db:
     github: crystal-lang/crystal-db
-    branch: feature/pool
-  pg:
-    github: asterite/crystal-pg
-    branch: feature/db
