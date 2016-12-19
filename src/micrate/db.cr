@@ -1,10 +1,16 @@
 require "db"
+require "./db/*"
 
 module Micrate
   module DB
     @@connection_url = ENV["DB_URL"]?
 
+    def self.connection_url
+      @@connection_url
+    end
+
     def self.connection_url=(connection_url)
+      @@dialect = nil
       @@connection_url = connection_url
     end
 
@@ -25,18 +31,12 @@ module Micrate
     end
 
     def self.create_migrations_table(db)
-      db.exec("CREATE TABLE micrate_db_version (
-                id serial NOT NULL,
-                version_id bigint NOT NULL,
-                is_applied boolean NOT NULL,
-                tstamp timestamp NULL default now(),
-                PRIMARY KEY(id)
-              );")
+      dialect.query_create_migrations_table(db)
     end
 
     def self.record_migration(migration, direction, db)
       is_applied = direction == :forward
-      db.exec("INSERT INTO micrate_db_version (version_id, is_applied) VALUES ($1, $2);", [migration.version, is_applied])
+      dialect.query_record_migration(migration, is_applied, db)
     end
 
     def self.exec(statement, db)
@@ -44,13 +44,18 @@ module Micrate
     end
 
     def self.get_migration_status(migration, db) : Time?
-      rows = db.query_all "SELECT tstamp, is_applied FROM micrate_db_version WHERE version_id=$1 ORDER BY tstamp DESC LIMIT 1", migration.version, as: {Time, Bool}
+      rows = dialect.query_migration_status(migration, db)
 
       if !rows.empty? && rows[0][1]
         rows[0][0]
       else
         nil
       end
+    end
+
+    private def self.dialect
+      validate_connection_url
+      @@dialect ||= Dialect.from_connection_url(@@connection_url.not_nil!)
     end
 
     private def self.validate_connection_url

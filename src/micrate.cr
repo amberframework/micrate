@@ -50,9 +50,9 @@ module Micrate
   def self.migration_status(db) : Hash(Migration, Time?)
     # ensure that migration table exists
     dbversion(db)
-    migration_status(migrations_by_version.values, db) 
+    migration_status(migrations_by_version.values, db)
   end
-  
+
   def self.migration_status(migrations : Array(Migration), db) : Hash(Migration, Time?)
     ({} of Migration => Time?).tap do |ret|
       migrations.each do |m|
@@ -127,7 +127,6 @@ module Micrate
     end
   end
 
-
   private def self.previous_version(current, all_versions)
     all_previous = all_versions.select { |version| version < current }
     if !all_previous.empty?
@@ -154,8 +153,8 @@ module Micrate
 
   def self.migration_plan(status : Hash(Migration, Time?), current : Int, target : Int, direction)
     status = ({} of Int64 => Bool).tap do |h|
-               status.each { |migration, migrated_at| h[migration.version] = !migrated_at.nil? }
-             end
+      status.each { |migration, migrated_at| h[migration.version] = !migrated_at.nil? }
+    end
 
     migration_plan(status, current, target, direction)
   end
@@ -206,7 +205,6 @@ module Micrate
   end
 
   class UnorderedMigrationsException < Exception
-
     getter :versions
 
     def initialize(@versions : Array(Int64))
