@@ -100,10 +100,10 @@ Commands:
         else
           print_help
         end
-      rescue e: UnorderedMigrationsException
+      rescue e : UnorderedMigrationsException
         report_unordered_migrations(e.versions)
         exit 1
-      rescue e: Exception
+      rescue e : Exception
         puts e.message
         exit 1
       end
@@ -119,4 +119,3 @@ Commands:
     end
   end
 end
-
