@@ -9,52 +9,52 @@ module Micrate
     DEFAULT_MIGRATIONS_PATH
   end
 
-  def self.dbversion(db)
+  def self.dbversion(db, migrations_table_suffix = "")
     begin
-      rows = DB.get_versions_last_first_order(db)
+      rows = DB.get_versions_last_first_order(db, migrations_table_suffix)
       return extract_dbversion(rows)
     rescue Exception
-      DB.create_migrations_table(db)
+      DB.create_migrations_table(db, migrations_table_suffix)
       return 0
     end
   end
 
-  def self.up(db, migrations_path = DEFAULT_MIGRATIONS_PATH)
+  def self.up(db, migrations_path = DEFAULT_MIGRATIONS_PATH, migrations_table_suffix = "")
     all_migrations = migrations_by_version(migrations_path)
 
-    current = dbversion(db)
+    current = dbversion(db, migrations_table_suffix)
     target = all_migrations.keys.sort.last
-    migrate(all_migrations, current, target, db)
+    migrate(all_migrations, current, target, db, migrations_table_suffix)
   end
 
-  def self.down(db, migrations_path = DEFAULT_MIGRATIONS_PATH)
+  def self.down(db, migrations_path = DEFAULT_MIGRATIONS_PATH, migrations_table_suffix = "")
     all_migrations = migrations_by_version(migrations_path)
 
-    current = dbversion(db)
+    current = dbversion(db, migrations_table_suffix)
     target = previous_version(current, all_migrations.keys)
-    migrate(all_migrations, current, target, db)
+    migrate(all_migrations, current, target, db, migrations_table_suffix)
   end
 
-  def self.redo(db, migrations_path = DEFAULT_MIGRATIONS_PATH)
+  def self.redo(db, migrations_path = DEFAULT_MIGRATIONS_PATH, migrations_table_suffix = "")
     all_migrations = migrations_by_version(migrations_path)
 
-    current = dbversion(db)
+    current = dbversion(db, migrations_table_suffix)
     previous = previous_version(current, all_migrations.keys)
 
-    migrate(all_migrations, current, previous, db)
-    migrate(all_migrations, previous, current, db)
+    migrate(all_migrations, current, previous, db, migrations_table_suffix)
+    migrate(all_migrations, previous, current, db, migrations_table_suffix)
   end
 
-  def self.migration_status(db, migrations_path = DEFAULT_MIGRATIONS_PATH) : Hash(Migration, Time?)
+  def self.migration_status(db, migrations_path = DEFAULT_MIGRATIONS_PATH, migrations_table_suffix = "") : Hash(Migration, Time?)
     # ensure that migration table exists
-    dbversion(db)
-    migration_status(migrations_by_version(migrations_path).values, db)
+    dbversion(db, migrations_table_suffix)
+    migration_status(migrations_by_version(migrations_path).values, db, migrations_table_suffix)
   end
 
-  def self.migration_status(migrations : Array(Migration), db) : Hash(Migration, Time?)
+  def self.migration_status(migrations : Array(Migration), db, migrations_table_suffix = "") : Hash(Migration, Time?)
     ({} of Migration => Time?).tap do |ret|
       migrations.each do |m|
-        ret[m] = DB.get_migration_status(m, db)
+        ret[m] = DB.get_migration_status(m, db, migrations_table_suffix)
       end
     end
   end
@@ -86,7 +86,7 @@ module Micrate
   # Private
   # ---------------------------------
 
-  private def self.migrate(all_migrations : Hash(Int, Migration), current : Int, target : Int, db)
+  private def self.migrate(all_migrations : Hash(Int, Migration), current : Int, target : Int, db, migrations_table_suffix)
     direction = current < target ? :forward : :backwards
 
     status = migration_status(all_migrations.values, db)
@@ -106,7 +106,7 @@ module Micrate
           DB.exec(stmt, db)
         end
 
-        DB.record_migration(migration, direction, db)
+        DB.record_migration(migration, direction, db, migrations_table_suffix)
 
         logger.info "OK   #{migration.name}"
       rescue e : Exception
