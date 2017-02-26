@@ -5,10 +5,6 @@ module Micrate
 
   DEFAULT_MIGRATIONS_PATH = File.join("db", "migrations")
 
-  def self.migrations_dir
-    DEFAULT_MIGRATIONS_PATH
-  end
-
   def self.dbversion(db, migrations_table_suffix = "")
     begin
       rows = DB.get_versions_last_first_order(db, migrations_table_suffix)
@@ -89,7 +85,7 @@ module Micrate
   private def self.migrate(all_migrations : Hash(Int, Migration), current : Int, target : Int, db, migrations_table_suffix)
     direction = current < target ? :forward : :backwards
 
-    status = migration_status(all_migrations.values, db)
+    status = migration_status(all_migrations.values, db, migrations_table_suffix)
     plan = migration_plan(status, current, target, direction)
 
     if plan.empty?

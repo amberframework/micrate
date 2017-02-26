@@ -1,59 +1,60 @@
+require "option_parser"
 require "logger"
 
 module Micrate
   module Cli
-    def self.run_up
+    def self.run_up(migrations_path, migrations_table_suffix)
       DB.connect do |db|
-        Micrate.up(db)
+        Micrate.up(db, migrations_path, migrations_table_suffix)
       end
     end
 
-    def self.run_down
+    def self.run_down(migrations_path, migrations_table_suffix)
       DB.connect do |db|
-        Micrate.down(db)
+        Micrate.down(db, migrations_path, migrations_table_suffix)
       end
     end
 
-    def self.run_redo
+    def self.run_redo(migrations_path, migrations_table_suffix)
       DB.connect do |db|
-        Micrate.redo(db)
+        Micrate.redo(db, migrations_path, migrations_table_suffix)
       end
     end
 
-    def self.run_status
+    def self.run_status(migrations_path, migrations_table_suffix)
       DB.connect do |db|
         puts "Applied At                  Migration"
         puts "======================================="
-        Micrate.migration_status(db).each do |migration, migrated_at|
+        Micrate.migration_status(db, migrations_path, migrations_table_suffix).each do |migration, migrated_at|
           ts = migrated_at.nil? ? "Pending" : migrated_at.to_s
           puts "%-24s -- %s\n" % [ts, migration.name]
         end
       end
     end
 
-    def self.run_create
+    def self.run_create(migrations_path)
       if ARGV.size < 1
         raise "Migration name required"
       end
 
-      migration_file = Micrate.create(ARGV.shift, Time.now)
+      migration_file = Micrate.create(ARGV.shift, Time.now, migrations_path)
       puts "Created #{migration_file}"
     end
 
-    def self.run_dbversion
+    def self.run_dbversion(migrations_table_suffix)
       DB.connect do |db|
         begin
-          puts Micrate.dbversion(db)
+          puts Micrate.dbversion(db, migrations_table_suffix)
         rescue
           raise "Could not read dbversion. Please make sure the database exists and verify the connection URL."
         end
       end
     end
 
-    def self.report_unordered_migrations(conflicting)
+    def self.report_unordered_migrations(conflicting, migrations_path)
       puts "The following migrations haven't been applied but have a timestamp older then the current version:"
       conflicting.each do |version|
-        puts "    #{version}" # TODO: report name
+        puts "    #{Migration.from_version(migrations_path, version).name}"
       end
       puts "
 Micrate will not run these migrations because they may have been written with an older database model in mind.
@@ -64,7 +65,7 @@ You should probably check if they need to be updated and rename them so they are
       puts "micrate is a database migration management system for Crystal projects, *heavily* inspired by Goose (https://bitbucket.org/liamstask/goose/).
 
 Usage:
-    micrate [options] <subcommand> [subcommand options]
+    micrate [options] <subcommand> [-h] [subcommand options]
 
 Commands:
     up         Migrate the DB to the most recent version available
@@ -72,36 +73,72 @@ Commands:
     redo       Re-run the latest migration
     status     dump the migration status for the current DB
     create     Create the scaffolding for a new migration
-    dbversion  Print the current version of the database"
+    dbversion  Print the current version of the database
+    help       Shows this message"
     end
 
-    def self.run
-      setup_logger
-
+    def self.validate_command
       if ARGV.empty?
         print_help
         return
       end
 
+      command = ARGV.shift
+
+      unless ["up", "down", "redo", "status", "create", "dbversion", "help"].includes? command
+        print_help
+        exit 1
+      end
+
+      command
+    end
+
+    def self.parse_command_arguments
+      migrations_path = Micrate::DEFAULT_MIGRATIONS_PATH
+      migrations_table_suffix = ""
+
+      OptionParser.parse! do |parser|
+        parser.banner = "Valid arguments:"
+
+        parser.on("-p NAME", "--path=PATH", "Specifies the directory where migrations are stored") { |path| migrations_path = path }
+        parser.on("-s NAME", "--suffix=SUFFIX", "Specifies a a suffix migrations table") { |suffix| migrations_table_suffix = suffix }
+        parser.on("-h", "--help", "Show this help") { puts parser; exit 0 }
+      end
+
+      if !Dir.exists?(migrations_path)
+        puts "Directory #{migrations_path} does not exist"
+        exit 1
+      end
+
+      {migrations_path, migrations_table_suffix}
+    end
+
+    def self.run
+      setup_logger
+
+      command = validate_command
+
+      migrations_path, migrations_table_suffix = parse_command_arguments
+
       begin
-        case ARGV.shift
+        case command
         when "up"
-          run_up
+          run_up(migrations_path, migrations_table_suffix)
         when "down"
-          run_down
+          run_down(migrations_path, migrations_table_suffix)
         when "redo"
-          run_redo
+          run_redo(migrations_path, migrations_table_suffix)
         when "status"
-          run_status
+          run_status(migrations_path, migrations_table_suffix)
         when "create"
-          run_create
+          run_create(migrations_path)
         when "dbversion"
-          run_dbversion
-        else
+          run_dbversion(migrations_table_suffix)
+        when "help"
           print_help
         end
       rescue e : UnorderedMigrationsException
-        report_unordered_migrations(e.versions)
+        report_unordered_migrations(e.versions, migrations_path)
         exit 1
       rescue e : Exception
         puts e.message
