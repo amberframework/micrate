@@ -3,12 +3,10 @@ require "./micrate/*"
 module Micrate
   @@logger : Logger?
 
-  def self.db_dir
-    "db"
-  end
+  DEFAULT_MIGRATIONS_PATH = File.join("db", "migrations")
 
   def self.migrations_dir
-    File.join(db_dir, "migrations")
+    DEFAULT_MIGRATIONS_PATH
   end
 
   def self.dbversion(db)
@@ -21,24 +19,24 @@ module Micrate
     end
   end
 
-  def self.up(db)
-    all_migrations = migrations_by_version
+  def self.up(db, migrations_path = DEFAULT_MIGRATIONS_PATH)
+    all_migrations = migrations_by_version(migrations_path)
 
     current = dbversion(db)
     target = all_migrations.keys.sort.last
     migrate(all_migrations, current, target, db)
   end
 
-  def self.down(db)
-    all_migrations = migrations_by_version
+  def self.down(db, migrations_path = DEFAULT_MIGRATIONS_PATH)
+    all_migrations = migrations_by_version(migrations_path)
 
     current = dbversion(db)
     target = previous_version(current, all_migrations.keys)
     migrate(all_migrations, current, target, db)
   end
 
-  def self.redo(db)
-    all_migrations = migrations_by_version
+  def self.redo(db, migrations_path = DEFAULT_MIGRATIONS_PATH)
+    all_migrations = migrations_by_version(migrations_path)
 
     current = dbversion(db)
     previous = previous_version(current, all_migrations.keys)
@@ -47,10 +45,10 @@ module Micrate
     migrate(all_migrations, previous, current, db)
   end
 
-  def self.migration_status(db) : Hash(Migration, Time?)
+  def self.migration_status(db, migrations_path = DEFAULT_MIGRATIONS_PATH) : Hash(Migration, Time?)
     # ensure that migration table exists
     dbversion(db)
-    migration_status(migrations_by_version.values, db)
+    migration_status(migrations_by_version(migrations_path).values, db)
   end
 
   def self.migration_status(migrations : Array(Migration), db) : Hash(Migration, Time?)
@@ -61,9 +59,9 @@ module Micrate
     end
   end
 
-  def self.create(name, dir, time)
+  def self.create(name, time, migrations_path = DEFAULT_MIGRATIONS_PATH)
     timestamp = time.to_s("%Y%m%d%H%M%S")
-    filename = File.join(dir, "#{timestamp}_#{name}.sql")
+    filename = File.join(migrations_path, "#{timestamp}_#{name}.sql")
 
     migration_template = "\
 -- +micrate Up
@@ -74,7 +72,7 @@ module Micrate
 -- SQL section 'Down' is executed when this migration is rolled back
 "
 
-    Dir.mkdir_p dir
+    Dir.mkdir_p migrations_path
     File.write(filename, migration_template)
 
     return filename
@@ -143,11 +141,11 @@ module Micrate
     end
   end
 
-  private def self.migrations_by_version
-    Dir.entries(migrations_dir)
-       .select { |name| File.file? File.join("db/migrations", name) }
+  private def self.migrations_by_version(migrations_path)
+    Dir.entries(migrations_path)
+       .select { |name| File.file? File.join(migrations_path, name) }
        .select { |name| /^\d+_.+\.sql$/ =~ name }
-       .map { |name| Migration.from_file(name) }
+       .map { |name| Migration.from_file(migrations_path, name) }
        .index_by { |migration| migration.version }
   end
 

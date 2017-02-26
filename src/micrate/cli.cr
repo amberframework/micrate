@@ -36,7 +36,7 @@ module Micrate
         raise "Migration name required"
       end
 
-      migration_file = Micrate.create(ARGV.shift, Micrate.migrations_dir, Time.now)
+      migration_file = Micrate.create(ARGV.shift, Time.now)
       puts "Created #{migration_file}"
     end
 
@@ -53,7 +53,7 @@ module Micrate
     def self.report_unordered_migrations(conflicting)
       puts "The following migrations haven't been applied but have a timestamp older then the current version:"
       conflicting.each do |version|
-        puts "    #{Migration.from_version(version).name}"
+        puts "    #{version}" # TODO: report name
       end
       puts "
 Micrate will not run these migrations because they may have been written with an older database model in mind.
