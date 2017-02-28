@@ -17,10 +17,13 @@ module Micrate
 
   def self.up(db, migrations_path = DEFAULT_MIGRATIONS_PATH, migrations_table_suffix = "")
     all_migrations = migrations_by_version(migrations_path)
-
     current = dbversion(db, migrations_table_suffix)
-    target = all_migrations.keys.sort.last
-    migrate(all_migrations, current, target, db, migrations_table_suffix)
+    if all_migrations.keys.size > 0
+      target = all_migrations.keys.sort.last
+      migrate(all_migrations, current, target, db, migrations_table_suffix)
+    else
+      puts "No migrations found #{migrations_path}"
+    end
   end
 
   def self.down(db, migrations_path = DEFAULT_MIGRATIONS_PATH, migrations_table_suffix = "")
@@ -140,7 +143,7 @@ module Micrate
   private def self.migrations_by_version(migrations_path)
     Dir.entries(migrations_path)
        .select { |name| File.file? File.join(migrations_path, name) }
-       .select { |name| /^\d+_.+\.sql$/ =~ name }
+       .select { |name| /^\d+.+\.sql$/ =~ name }
        .map { |name| Migration.from_file(migrations_path, name) }
        .index_by { |migration| migration.version }
   end
