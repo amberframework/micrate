@@ -18,7 +18,7 @@ module Micrate
   def self.up(db, migrations_path = DEFAULT_MIGRATIONS_PATH, migrations_table_suffix = "")
     all_migrations = migrations_by_version(migrations_path)
     current = dbversion(db, migrations_table_suffix)
-    if all_migrations.keys.size > 0
+    if !all_migrations.keys.empty?
       target = all_migrations.keys.sort.last
       migrate(all_migrations, current, target, db, migrations_table_suffix)
     else
