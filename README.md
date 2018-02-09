@@ -1,29 +1,22 @@
 # micrate
 
-Micrate is a database migration tool written in crystal.
+Micrate is a database migration tool written in Crystal.
 
 It is inspired by [goose](https://bitbucket.org/liamstask/goose/). Some code was ported from there too, so check it out.
 
-This is still a work in progress!
+Micrate currently supports migrations for Postgres, Mysql and SQLite3, but it should be easy to add support for any other database engine with an existing [crystal-db API](https://github.com/crystal-lang/crystal-db) driver.
 
-## Installation
+## Command line
 
 Micrate runs as either a standalone binary that you "just run" to manipulate the database,
 or you can call it from your Crystal code in the same way.
-
-To install the standalone binary tool check out the releases page, or use homebrew:
-
-```
-$ brew tap juanedi/micrate
-$ brew install micrate
-```
 
 To use the Crystal API, add this to your application's `shard.yml`:
 
 ```yaml
 dependencies:
   micrate:
-    github: juanedi/micrate
+    github: amberframework/micrate
 ```
 
 This allows you to programatically use micrate's features. 
@@ -46,7 +39,8 @@ $ bin/micrate dbversion
 
 ## Usage
 
-Execute `micrate help` for usage instructions. Micrate will connect to the postgres database specified by the `PG_URL` environment variable. Support for other database engines and better configuration options is on the way!
+Execute `micrate help` for usage instructions. Micrate will connect to the database specified by the `DB_URL` environment variable.
+ppage
 
 To create a new migration use the `create` subcommand. For example, `micrate create add_users_table` will create a new SQL migration file with a name such as `db/migrations/20160524162446_add_users_table.sql` that looks like this:
 
@@ -117,6 +111,32 @@ language plpgsql;
 -- +micrate StatementEnd
 ```
 
+## API
+
+To use the Crystal API, add this to your application's `shard.yml`:
+
+```yaml
+dependencies:
+  micrate:
+    github: juanedi/micrate
+```
+
+This allows you to programatically use micrate's features. You'll see the `Micrate` module has an equivalent for every CLI command. If you need to use micrate's CLI without installing the tool (which could be convenient in a CI environment), you can write a runner script as follows:
+
+```crystal
+#! /usr/bin/env crystal
+#
+# To build a standalone command line client, require the
+# driver you wish to use and use `Micrate::Cli`.
+#
+
+require "micrate"
+require "pg"
+
+Micrate::DB.connection_url = "postgresql://..."
+Micrate::Cli.run
+```
+
 ## Contributing
 
 1. Fork it ( https://github.com/juanedi/micrate/fork )
@@ -124,13 +144,6 @@ language plpgsql;
 3. Commit your changes (git commit -am 'Add some feature')
 4. Push to the branch (git push origin my-new-feature)
 5. Create a new Pull Request
-
-## TODOs
-
-   * Support for other database engines (currently only postgres is supported)
-   * Use common crystal API for DB access
-   * Multiple environments (development, test, production)
-   * Crystal DSL for database migrations
 
 ## Contributors
 

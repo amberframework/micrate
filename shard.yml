@@ -1,9 +1,9 @@
 name: micrate
-version: 0.1.0
+version: 0.3.0
 
 authors:
   - Juan Edi <jedi11235@gmail.com>
 
 dependencies:
-  pg:
-    github: will/crystal-pg
+  db:
+    github: crystal-lang/crystal-db
