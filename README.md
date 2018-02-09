@@ -8,14 +8,39 @@ Micrate currently supports migrations for Postgres, Mysql and SQLite3, but it sh
 
 ## Command line
 
-To install the standalone binary tool check out the releases page, or use homebrew:
+Micrate runs as either a standalone binary that you "just run" to manipulate the database,
+or you can call it from your Crystal code in the same way.
 
+To use the Crystal API, add this to your application's `shard.yml`:
+
+```yaml
+dependencies:
+  micrate:
+    github: amberframework/micrate
 ```
-$ brew tap juanedi/micrate
-$ brew install micrate
+
+This allows you to programatically use micrate's features. 
+You'll see the `Micrate` module has an equivalent for every CLI command, so you can call those methods.
+If you want to use micrate's CLI without installing the tool (which could be convenient in a CI environment) 
+you can create a simple script like the following (we'll call it bin/micrate in this case):
+
+```crystal
+#! /usr/bin/env crystal
+require "micrate"
+
+Micrate::Cli.run
 ```
+
+...and use it just as the binary program (after `chmod +x`ing it):
+```
+$ bin/micrate dbversion
+0
+```
+
+## Usage
 
 Execute `micrate help` for usage instructions. Micrate will connect to the database specified by the `DB_URL` environment variable.
+ppage
 
 To create a new migration use the `create` subcommand. For example, `micrate create add_users_table` will create a new SQL migration file with a name such as `db/migrations/20160524162446_add_users_table.sql` that looks like this:
 
