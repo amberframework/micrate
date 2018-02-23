@@ -1,3 +1,5 @@
+> The Amber Team is currently working addressing Pending Issues, we will be notifying when a PR is ready for Community review.
+
 # micrate
 
 Micrate is a database migration tool written in Crystal.
