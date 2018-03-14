@@ -75,7 +75,7 @@ $ micrate dbversion # at any time you can find out the current version of the da
 20160524162446
 ```
 
-If you ever need to roll back the last migration, you can do so by executing `micrate down`. There's also `micrate redo` which rolls back the last migration and applies it again. Last but not least: use `micrate status` to find out the state of each migration:
+If you ever need to roll back the last migration, you can do so by executing `micrate down`. There's also `micrate redo` which rolls back the last migration and applies it again. If you want to migrate to a specific version, execute `micrate to -v 20160524162446` or even `micrate 20160524162446` (for example). Last but not least: use `micrate status` to find out the state of each migration:
 
 ```
 $ micrate status

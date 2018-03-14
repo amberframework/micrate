@@ -15,6 +15,12 @@ module Micrate
     end
   end
 
+  def self.exact(db, target, migrations_path = DEFAULT_MIGRATIONS_PATH, migrations_table_suffix = "")
+    all_migrations = migrations_by_version(migrations_path)
+    current = dbversion(db, migrations_table_suffix)
+    migrate(all_migrations, current, target, db, migrations_table_suffix)
+  end
+
   def self.up(db, migrations_path = DEFAULT_MIGRATIONS_PATH, migrations_table_suffix = "")
     all_migrations = migrations_by_version(migrations_path)
 
