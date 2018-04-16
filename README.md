@@ -28,6 +28,12 @@ you can create a simple script like the following (we'll call it bin/micrate in 
 
 ```crystal
 #! /usr/bin/env crystal
+
+# Require your database's adapter
+# require "pg"
+# require "mysql"
+# require "sqlite3"
+
 require "micrate"
 
 Micrate::Cli.run
