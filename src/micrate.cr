@@ -62,7 +62,7 @@ module Micrate
   end
 
   def self.create(name, time, migrations_path = DEFAULT_MIGRATIONS_PATH)
-    timestamp = time.to_s("%Y%m%d%H%M%S")
+    timestamp = time.to_s("%Y%m%d%H%M%S%L")
     filename = File.join(migrations_path, "#{timestamp}_#{name}.sql")
 
     migration_template = "\
@@ -75,9 +75,13 @@ module Micrate
 "
 
     Dir.mkdir_p migrations_path
-    File.write(filename, migration_template)
 
-    return filename
+    if File.exists?(filename)
+      create(name, Time.now, migrations_path)
+    else
+      File.write(filename, migration_template)
+      return filename
+    end
   end
 
   def self.connection_url=(connection_url)
