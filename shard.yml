@@ -4,6 +4,7 @@ version: 0.3.1
 authors:
   - Juan Edi <jedi11235@gmail.com>
   - Vlad Faust <mail@vladfaust.com>
+  - Amber Team <amberframework.org>
 
 dependencies:
   db:
