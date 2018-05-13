@@ -147,7 +147,8 @@ module Micrate
     Dir.entries(migrations_dir)
        .select { |name| File.file? File.join("db/migrations", name) }
        .select { |name| /^\d+_.+\.sql$/ =~ name }
-       .map { |name| Migration.from_file(name) }
+       .sort
+       .map_with_index { |name, index| Migration.from_file(name, index) }
        .index_by { |migration| migration.version }
   end
 
