@@ -62,7 +62,7 @@ module Micrate
   end
 
   def self.create(name, time, migrations_path = DEFAULT_MIGRATIONS_PATH)
-    timestamp = time.to_s("%Y%m%d%H%M%S")
+    timestamp = time.to_s("%Y%m%d%H%M%S%L")
     filename = File.join(migrations_path, "#{timestamp}_#{name}.sql")
 
     migration_template = "\
