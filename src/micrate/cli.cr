@@ -3,6 +3,12 @@ require "logger"
 
 module Micrate
   module Cli
+    def self.run_exact(version : Int64, migrations_path, migrations_table_suffix)
+      DB.connect do |db|
+        Micrate.exact(db, version, migrations_path, migrations_table_suffix)
+      end
+    end
+
     def self.run_up(migrations_path, migrations_table_suffix)
       DB.connect do |db|
         Micrate.up(db, migrations_path, migrations_table_suffix)
@@ -70,6 +76,8 @@ Usage:
 Commands:
     up         Migrate the DB to the most recent version available
     down       Roll back the version by 1
+    to         Migrate exact to the given version (e.g. micrate to -v 20160524162446)
+    <version>  Shorthand for 'micrate to' (e.g. micrate 20160524162446)
     redo       Re-run the latest migration
     status     dump the migration status for the current DB
     create     Create the scaffolding for a new migration
@@ -85,7 +93,7 @@ Commands:
 
       command = ARGV.shift
 
-      unless ["up", "down", "redo", "status", "create", "dbversion", "help"].includes? command
+      unless ["up", "down", "redo", "status", "create", "dbversion", "help", "to"].includes?(command) || /^\d+$/.match(command)
         print_help
         exit 1
       end
@@ -96,12 +104,14 @@ Commands:
     def self.parse_command_arguments
       migrations_path = Micrate::DEFAULT_MIGRATIONS_PATH
       migrations_table_suffix = ""
+      migration_version = nil
 
       OptionParser.parse! do |parser|
         parser.banner = "Valid arguments:"
 
         parser.on("-p NAME", "--path=PATH", "Specifies the directory where migrations are stored") { |path| migrations_path = path }
         parser.on("-s NAME", "--suffix=SUFFIX", "Specifies a a suffix migrations table") { |suffix| migrations_table_suffix = suffix }
+        parser.on("-v VERSION", "--version=VERSION", "Specifies an exact version to migrate to") { |version| migration_version = version }
         parser.on("-h", "--help", "Show this help") { puts parser; exit 0 }
       end
 
@@ -110,7 +120,7 @@ Commands:
         exit 1
       end
 
-      {migrations_path, migrations_table_suffix}
+      {migrations_path, migrations_table_suffix, migration_version}
     end
 
     def self.run
@@ -118,7 +128,7 @@ Commands:
 
       command = validate_command
 
-      migrations_path, migrations_table_suffix = parse_command_arguments
+      migrations_path, migrations_table_suffix, version = parse_command_arguments
 
       begin
         case command
@@ -134,6 +144,14 @@ Commands:
           run_create(migrations_path)
         when "dbversion"
           run_dbversion(migrations_table_suffix)
+        when "to"
+          if version
+            run_exact(version.to_i64, migrations_path, migrations_table_suffix)
+          else
+            "An exact migration version must be specified! For example: micrate to -v 20160524162446"
+          end
+        when /^\d+$/
+          run_exact(command.not_nil!.to_i64, migrations_path, migrations_table_suffix)
         when "help"
           print_help
         end
