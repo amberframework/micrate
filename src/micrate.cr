@@ -143,13 +143,31 @@ module Micrate
     end
   end
 
+  private def self.fix_timestamp_collisions(migrations)
+    migrations.map do |migration|
+      count = migrations.count { |this_migration| this_migration.version == migration.version }
+      pp! count
+      if count > 1
+        collision_path = File.join(Micrate.migrations_dir, migration.name)
+        new_name = migration.name.split("_")
+        new_version = new_name.shift.to_i64 + 1
+        new_path = File.join(Micrate.migrations_dir, "#{new_version}_" + new_name.join("_"))
+        File.rename(collision_path, new_path)
+        migration.version = new_version
+        migration
+      else
+        migration
+      end
+    end
+  end
+
   private def self.migrations_by_version
-    Dir.entries(migrations_dir)
-       .select { |name| File.file? File.join("db/migrations", name) }
-       .select { |name| /^\d+_.+\.sql$/ =~ name }
-       .sort
-       .map_with_index { |name, index| Migration.from_file(name, index) }
-       .index_by { |migration| migration.version }
+    migrations = Dir.entries(migrations_dir)
+                    .select { |name| File.file? File.join("db/migrations", name) }
+                    .select { |name| /^\d+_.+\.sql$/ =~ name }
+                    .map { |name| Migration.from_file(name) }
+    migrations_without_collisions = fix_timestamp_collisions(migrations)
+    migrations_without_collisions.index_by { |migration| migration.version }
   end
 
   def self.migration_plan(status : Hash(Migration, Time?), current : Int, target : Int, direction)
