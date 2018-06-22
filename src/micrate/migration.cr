@@ -5,8 +5,9 @@ module Micrate
     getter version
     getter name
     getter source
+    getter index
 
-    def initialize(@version : Int64, @name : String, @source : String)
+    def initialize(@version : Int64, @name : String, @source : String, @index = 0)
     end
 
     # Algorithm ported from Goose
