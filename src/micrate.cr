@@ -146,7 +146,6 @@ module Micrate
   private def self.fix_timestamp_collisions(migrations)
     migrations.map do |migration|
       count = migrations.count { |this_migration| this_migration.version == migration.version }
-      pp! count
       if count > 1
         collision_path = File.join(Micrate.migrations_dir, migration.name)
         new_name = migration.name.split("_")
