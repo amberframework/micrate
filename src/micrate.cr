@@ -149,7 +149,7 @@ module Micrate
        .select { |name| /^\d+_.+\.sql$/ =~ name }
        .sort
        .map_with_index { |name, index| Migration.from_file(migrations_path, name, index) }
-       .index_by { |migration| migration.version }
+       .index_by { |migration| migration.index }
   end
 
   def self.migration_plan(status : Hash(Migration, Time?), current : Int, target : Int, direction)
