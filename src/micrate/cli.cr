@@ -29,8 +29,10 @@ module Micrate
 
     def self.run_status(migrations_path, migrations_table_suffix)
       DB.connect do |db|
-        puts "Applied At                  Migration"
-        puts "======================================="
+        puts <<-MESSAGE
+        Applied At                  Migration
+        =====================================
+        MESSAGE
         Micrate.migration_status(db, migrations_path, migrations_table_suffix).each do |migration, migrated_at|
           ts = migrated_at.nil? ? "Pending" : migrated_at.to_s
           puts "%-24s -- %s\n" % [ts, migration.name]
@@ -62,27 +64,30 @@ module Micrate
       conflicting.each do |version|
         puts "    #{Migration.from_version(migrations_path, version).name}"
       end
-      puts "
-Micrate will not run these migrations because they may have been written with an older database model in mind.
-You should probably check if they need to be updated and rename them so they are considered a newer version."
+      puts <<-MESSAGE
+      Micrate will not run these migrations because they may have been written with an older database model in mind.
+      You should probably check if they need to be updated and rename them so they are considered a newer version."
+      MESSAGE
     end
 
     def self.print_help
-      puts "micrate is a database migration management system for Crystal projects, *heavily* inspired by Goose (https://bitbucket.org/liamstask/goose/).
+      puts <<-MESSAGE
+      micrate is a database migration management system for Crystal projects, *heavily* inspired by Goose (https://bitbucket.org/liamstask/goose/).
 
-Usage:
-    micrate [options] <subcommand> [-h] [subcommand options]
+      Usage:
+        micrate [options] <subcommand> [-h] [subcommand options]
 
-Commands:
-    up         Migrate the DB to the most recent version available
-    down       Roll back the version by 1
-    to         Migrate exact to the given version (e.g. micrate to -v 20160524162446)
-    <version>  Shorthand for 'micrate to' (e.g. micrate 20160524162446)
-    redo       Re-run the latest migration
-    status     dump the migration status for the current DB
-    create     Create the scaffolding for a new migration
-    dbversion  Print the current version of the database
-    help       Shows this message"
+      Commands:
+        up         Migrate the DB to the most recent version available
+        down       Roll back the version by 1
+        to         Migrate exact to the given version (e.g. micrate to -v 20160524162446)
+        <version>  Shorthand for 'micrate to' (e.g. micrate 20160524162446)
+        redo       Re-run the latest migration
+        status     dump the migration status for the current DB
+        create     Create the scaffolding for a new migration
+        dbversion  Print the current version of the database
+        help       Shows this message
+      MESSAGE
     end
 
     def self.validate_command
