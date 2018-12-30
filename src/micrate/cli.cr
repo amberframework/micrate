@@ -30,7 +30,7 @@ module Micrate
     def self.run_status(migrations_path, migrations_table_suffix)
       DB.connect do |db|
         puts "Applied At                  Migration"
-        puts "======================================"
+        puts "======================================="
 
         Micrate.migration_status(db, migrations_path, migrations_table_suffix).each do |migration, migrated_at|
           ts = migrated_at.nil? ? "Pending" : migrated_at.to_s
