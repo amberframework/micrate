@@ -1,4 +1,4 @@
-> The Amber Team is currently working addressing Pending Issues, we will be notifying when a PR is ready for Community review.
+> The Amber Team is working addressing Pending Issues, we will be notifying when a PR is ready for Community review.
 
 # micrate
 
