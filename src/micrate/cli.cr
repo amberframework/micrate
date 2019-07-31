@@ -31,7 +31,7 @@ module Micrate
       DB.connect do |db|
         puts "Applied At                  Migration"
         puts "======================================="
-        Micrate.migration_status(db, migrations_path, migrations_table_suffix).each do |migration, migrated_at|
+        Micrate.migration_status(db, migrations_path, migrations_table_suffix).sort_by { |migration, migrated_at| migrated_at }.each do |migration, migrated_at|
           ts = migrated_at.nil? ? "Pending" : migrated_at.to_s
           puts "%-24s -- %s\n" % [ts, migration.name]
         end
