@@ -8,3 +8,4 @@ authors:
 dependencies:
   db:
     github: crystal-lang/crystal-db
+    version: ~> 0.7.0
