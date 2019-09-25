@@ -2,7 +2,7 @@ module Micrate
   class Migration
     SQL_CMD_PREFIX = "-- +micrate "
 
-    getter version
+    property version
     getter name
     getter source
 
