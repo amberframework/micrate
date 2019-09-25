@@ -120,7 +120,7 @@ module Micrate
 
   private def self.verify_unordered_migrations(current, status : Hash(Int, Bool))
     migrations = status.select { |version, is_applied| !is_applied && version < current }
-                       .keys
+      .keys
 
     if !migrations.empty?
       raise UnorderedMigrationsException.new(migrations)
@@ -182,13 +182,13 @@ module Micrate
 
     if direction == :forward
       all_versions.keys
-                  .sort
-                  .select { |v| v > current && v <= target }
+        .sort
+        .select { |v| v > current && v <= target }
     else
       all_versions.keys
-                  .sort
-                  .reverse
-                  .select { |v| v <= current && v > target }
+        .sort
+        .reverse
+        .select { |v| v <= current && v > target }
     end
   end
 
