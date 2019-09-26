@@ -31,7 +31,7 @@ module Micrate::DB
     def query_record_migration(migration, is_applied, db, migrations_table_suffix)
       table_name = migrations_table_name(migrations_table_suffix)
 
-      db.exec("INSERT INTO #{table_name} (version_id, is_applied, tstamp) VALUES (?, ?, ?);", migration.version, is_applied, Time.now)
+      db.exec("INSERT INTO #{table_name} (version_id, is_applied, tstamp) VALUES (?, ?, ?);", [migration.version, is_applied, Time.now])
     end
   end
 end

@@ -120,7 +120,7 @@ module Micrate
 
   private def self.verify_unordered_migrations(current, status : Hash(Int, Bool))
     migrations = status.select { |version, is_applied| !is_applied && version < current }
-      .keys
+                       .keys
 
     if !migrations.empty?
       raise UnorderedMigrationsException.new(migrations)
@@ -143,30 +143,12 @@ module Micrate
     end
   end
 
-  private def self.fix_timestamp_collisions(migrations)
-    migrations.map_with_index do |migration, index|
-      count = migrations.count { |this_migration| this_migration.version == migration.version }
-      if count > 1
-        collision_path = File.join(Micrate.migrations_dir, migration.name)
-        new_name = migration.name.split("_")
-        new_version = new_name.shift.to_i64 + index
-        new_path = File.join(Micrate.migrations_dir, "#{new_version}_" + new_name.join("_"))
-        File.rename(collision_path, new_path)
-        migration.version = new_version
-        migration
-      else
-        migration
-      end
-    end
-  end
-
-  private def self.migrations_by_version
-    migrations = Dir.entries(migrations_dir)
-      .select { |name| File.file? File.join("db/migrations", name) }
-      .select { |name| /^\d+_.+\.sql$/ =~ name }
-      .map { |name| Migration.from_file(name) }
-    migrations_without_collisions = fix_timestamp_collisions(migrations)
-    migrations_without_collisions.index_by { |migration| migration.version }
+  private def self.migrations_by_version(migrations_path)
+    Dir.entries(migrations_path)
+       .select { |name| File.file? File.join(migrations_path, name) }
+       .select { |name| /^\d+_.+\.sql$/ =~ name }
+       .map { |name| Migration.from_file(migrations_path, name) }
+       .index_by { |migration| migration.version }
   end
 
   def self.migration_plan(status : Hash(Migration, Time?), current : Int, target : Int, direction)
@@ -182,13 +164,13 @@ module Micrate
 
     if direction == :forward
       all_versions.keys
-        .sort
-        .select { |v| v > current && v <= target }
+                  .sort
+                  .select { |v| v > current && v <= target }
     else
       all_versions.keys
-        .sort
-        .reverse
-        .select { |v| v <= current && v > target }
+                  .sort
+                  .reverse
+                  .select { |v| v <= current && v > target }
     end
   end
 

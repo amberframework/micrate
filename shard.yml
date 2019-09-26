@@ -1,11 +1,10 @@
 name: micrate
-version: 0.3.4
+version: 0.3.1
 
 authors:
   - Juan Edi <jedi11235@gmail.com>
-  - Amber Team <amberframework.org>
+  - Vlad Faust <mail@vladfaust.com>
 
 dependencies:
   db:
     github: crystal-lang/crystal-db
-    version: ~> 0.7.0

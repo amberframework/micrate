@@ -1,4 +1,4 @@
-> The Amber Team is working addressing Pending Issues, we will be notifying when a PR is ready for Community review.
+> The Amber Team is currently working addressing Pending Issues, we will be notifying when a PR is ready for Community review.
 
 # micrate
 
@@ -28,12 +28,6 @@ you can create a simple script like the following (we'll call it bin/micrate in 
 
 ```crystal
 #! /usr/bin/env crystal
-
-# Require your database's adapter
-# require "pg"
-# require "mysql"
-# require "sqlite3"
-
 require "micrate"
 
 Micrate::Cli.run
