@@ -1,9 +1,8 @@
 name: micrate
-version: 0.3.4
+version: 0.3.0
 
 authors:
   - Juan Edi <jedi11235@gmail.com>
-  - Amber Team <amberframework.org>
 
 dependencies:
   db:
