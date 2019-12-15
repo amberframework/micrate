@@ -43,8 +43,9 @@ module Micrate
     current = dbversion(db)
     previous = previous_version(current, all_migrations.keys)
 
-    migrate(all_migrations, current, previous, db)
-    migrate(all_migrations, previous, current, db)
+    if migrate(all_migrations, current, previous, db) == :success
+      migrate(all_migrations, previous, current, db)
+    end
   end
 
   def self.migration_status(db) : Hash(Migration, Time?)
@@ -96,7 +97,7 @@ module Micrate
 
     if plan.empty?
       logger.info "No migrations to run. current version: #{current}"
-      return
+      return :nop
     end
 
     logger.info "Migrating db, current version: #{current}, target: #{target}"
@@ -112,10 +113,11 @@ module Micrate
 
         logger.info "OK   #{migration.name}"
       rescue e : Exception
-        logger.info "An error ocurred executing migration #{migration.version}. Error message is: #{e.message}"
-        return
+        logger.error "An error occurred executing migration #{migration.version}. Error message is: #{e.message}"
+        return :error
       end
     end
+    :success
   end
 
   private def self.verify_unordered_migrations(current, status : Hash(Int, Bool))
