@@ -36,7 +36,7 @@ module Micrate
         raise "Migration name required"
       end
 
-      migration_file = Micrate.create(ARGV.shift, Micrate.migrations_dir, Time.now)
+      migration_file = Micrate.create(ARGV.shift, Micrate.migrations_dir, Time.local)
       puts "Created #{migration_file}"
     end
 
