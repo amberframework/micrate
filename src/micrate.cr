@@ -107,11 +107,11 @@ module Micrate
       begin
 
         # Wrap migration in a transaction
-        DB.exec("BEGIN;\n")
+        DB.exec("BEGIN;\n", db)
         migration.statements(direction).each do |stmt|
           DB.exec(stmt, db)
         end
-        DB.exec("\nCOMMIT;")
+        DB.exec("\nCOMMIT;", db)
 
         DB.record_migration(migration, direction, db)
 
