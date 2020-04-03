@@ -46,6 +46,8 @@ module Micrate
               statement_ended = ignore_semicolons == true
               ignore_semicolons = false
             end
+          else
+            # TODO? invalid command
           end
         end
 
