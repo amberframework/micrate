@@ -46,6 +46,8 @@ module Micrate
               statement_ended = ignore_semicolons == true
               ignore_semicolons = false
             end
+          else
+            # TODO? invalid command
           end
         end
 
@@ -75,8 +77,8 @@ module Micrate
 
     def self.from_version(version)
       file_name = Dir.entries(Micrate.migrations_dir)
-                     .find { |name| name.starts_with? version.to_s  }
-                     .not_nil!
+        .find { |name| name.starts_with? version.to_s }
+        .not_nil!
       self.from_file(file_name)
     end
   end
