@@ -1,5 +1,5 @@
 name: micrate
-version: 0.6.2
+version: 0.7.0
 crystal: 0.33.0
 
 authors:
@@ -12,4 +12,4 @@ maintainers:
 dependencies:
   db:
     github: crystal-lang/crystal-db
-    version: ~> 0.8.0
+    version: ~> 0.9.0
