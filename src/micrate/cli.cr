@@ -1,4 +1,4 @@
-require "logger"
+require "log"
 
 module Micrate
   module Cli
@@ -110,11 +110,13 @@ Commands:
     end
 
     def self.setup_logger
-      Micrate.logger = Logger.new(STDOUT).tap do |l|
-        l.level = Logger::INFO
-        l.formatter = Logger::Formatter.new do |severity, datetime, progname, message, io|
-          io << message
+      Micrate.logger = Log.for("").tap do |l|
+        backend = Log::IOBackend.new(STDOUT)
+        backend.formatter = Log::Formatter.new do |entry, io|
+          io << entry.message
         end
+        l.backend = backend
+        l.level = Log::Severity::Info
       end
     end
   end

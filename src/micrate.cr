@@ -1,7 +1,7 @@
 require "./micrate/*"
 
 module Micrate
-  @@logger : Logger?
+  @@logger : Log?
 
   def self.db_dir
     "db"
@@ -96,11 +96,11 @@ module Micrate
     plan = migration_plan(status, current, target, direction)
 
     if plan.empty?
-      logger.info "No migrations to run. current version: #{current}"
+      logger.info {"No migrations to run. current version: #{current}"}
       return :nop
     end
 
-    logger.info "Migrating db, current version: #{current}, target: #{target}"
+    logger.info {"Migrating db, current version: #{current}, target: #{target}"}
 
     plan.each do |version|
       migration = all_migrations[version]
@@ -111,9 +111,9 @@ module Micrate
 
         DB.record_migration(migration, direction, db)
 
-        logger.info "OK   #{migration.name}"
+        logger.info {"OK   #{migration.name}"}
       rescue e : Exception
-        logger.error "An error occurred executing migration #{migration.version}. Error message is: #{e.message}"
+        logger.error {"An error occurred executing migration #{migration.version}. Error message is: #{e.message}"}
         return :error
       end
     end
@@ -197,8 +197,9 @@ module Micrate
   end
 
   def self.logger
-    @@logger ||= Logger.new(STDOUT).tap do |l|
-      l.level = Logger::UNKNOWN
+    @@logger ||= Log.for("").tap do |l|
+      l.backend = Log::IOBackend.new(STDOUT)
+      l.level = Log::Severity::None
     end
   end
 
