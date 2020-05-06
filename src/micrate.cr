@@ -105,9 +105,13 @@ module Micrate
     plan.each do |version|
       migration = all_migrations[version]
       begin
+
+        # Wrap migration in a transaction
+        DB.exec("BEGIN;\n", db)
         migration.statements(direction).each do |stmt|
           DB.exec(stmt, db)
         end
+        DB.exec("\nCOMMIT;", db)
 
         DB.record_migration(migration, direction, db)
 

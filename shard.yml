@@ -1,6 +1,6 @@
 name: micrate
 version: 0.7.0
-crystal: 0.32.1
+crystal: 0.33.0
 
 authors:
   - Juan Edi <jedi11235@gmail.com>
