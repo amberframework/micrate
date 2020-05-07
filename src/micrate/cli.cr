@@ -110,7 +110,7 @@ Commands:
     end
 
     def self.setup_logger
-      Micrate.logger = Log.for("").tap do |l|
+      Micrate.logger = Log.for("micrate").tap do |l|
         backend = Log::IOBackend.new(STDOUT)
         backend.formatter = Log::Formatter.new do |entry, io|
           io << entry.message

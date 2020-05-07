@@ -197,7 +197,7 @@ module Micrate
   end
 
   def self.logger
-    @@logger ||= Log.for("").tap do |l|
+    @@logger ||= Log.for("micrate").tap do |l|
       l.backend = Log::IOBackend.new(STDOUT)
       l.level = Log::Severity::None
     end
