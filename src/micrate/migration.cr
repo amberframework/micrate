@@ -14,6 +14,8 @@ module Micrate
     # Complex statements cannot be resolved by just splitting the script by semicolons.
     # In this cases we allow using StatementBegin and StatementEnd directives as hints.
     def statements(direction)
+      return crystal_migration(direction) if name.ends_with?("cr")
+
       statements = [] of String
 
       # track the count of each section
@@ -80,6 +82,32 @@ module Micrate
         .find { |name| name.starts_with? version.to_s }
         .not_nil!
       self.from_file(file_name)
+    end
+
+    def crystal_migration(direction : Symbol)
+      file_name = File.join(Micrate.migrations_dir, @name)
+      io = IO::Memory.new
+      if matcher = /^\d+_(.+).cr$/.match(@name)
+        if class_name = matcher[1]
+          if File.exists?(file_name)
+            code = [] of String
+            code << %(require "amber")
+            code << %(require "granite/migration")
+            code << %(require "./config/database.cr") if Dir.exists?("config")
+            code << %(require "./#{file_name}")
+            code << %(migration = #{class_name.camelcase}.new)
+            code << %(puts migration.generate_sql(#{direction == :forward ? ":up" : ":down"}))
+            Process.run(%(crystal eval '#{code.join("\n")}'), shell: true, output: io, error: io)
+          end
+        else
+          Micrate.logger.error { "Could not find the class in file name: #{@name}.  Make sure the file name contains the name of the class to initialize." }
+        end
+      else
+        Micrate.logger.error { "Could not match file name: #{@name}" }
+      end
+      sql = io.to_s
+      Micrate.logger.info { sql }
+      return sql.split(";")
     end
   end
 end
