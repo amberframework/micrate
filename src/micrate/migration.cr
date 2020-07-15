@@ -91,9 +91,7 @@ module Micrate
         if class_name = matcher[1]
           if File.exists?(file_name)
             code = [] of String
-            code << %(require "amber")
-            code << %(require "granite/migration")
-            code << %(require "./config/database.cr") if Dir.exists?("config")
+            code << %(require "./config/database.cr") if File.exists?("./config/database.cr")
             code << %(require "./#{file_name}")
             code << %(migration = #{class_name.camelcase}.new)
             code << %(puts migration.generate_sql(#{direction == :forward ? ":up" : ":down"}))
