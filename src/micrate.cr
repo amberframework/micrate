@@ -1,7 +1,9 @@
+require "log"
+
 require "./micrate/*"
 
 module Micrate
-  @@logger : Log?
+  Log = ::Log.for(self)
 
   def self.db_dir
     "db"
@@ -23,6 +25,11 @@ module Micrate
 
   def self.up(db)
     all_migrations = migrations_by_version
+
+    if all_migrations.size == 0
+      Log.warn { "No migrations found!" }
+      return
+    end
 
     current = dbversion(db)
     target = all_migrations.keys.sort.last
@@ -96,11 +103,11 @@ module Micrate
     plan = migration_plan(status, current, target, direction)
 
     if plan.empty?
-      logger.info { "No migrations to run. current version: #{current}" }
+      Log.info { "No migrations to run. current version: #{current}" }
       return :nop
     end
 
-    logger.info { "Migrating db, current version: #{current}, target: #{target}" }
+    Log.info { "Migrating db, current version: #{current}, target: #{target}" }
 
     plan.each do |version|
       migration = all_migrations[version]
@@ -114,10 +121,10 @@ module Micrate
         DB.record_migration(migration, direction, db)
 
         tx.commit
-        logger.info { "OK   #{migration.name}" }
+        Log.info { "OK   #{migration.name}" }
       rescue e : Exception
         tx.rollback
-        logger.error { "Rollback. An error occurred executing migration #{migration.version}. Error message is: #{e.message}" }
+        Log.error(exception: e) { "An error occurred executing migration #{migration.version}." }
         return :error
       end
     end
@@ -198,17 +205,6 @@ module Micrate
     end
 
     return 0
-  end
-
-  def self.logger
-    @@logger ||= Log.for("micrate").tap do |l|
-      l.backend = Log::IOBackend.new(STDOUT)
-      l.level = Log::Severity::None
-    end
-  end
-
-  def self.logger=(logger)
-    @@logger = logger
   end
 
   class UnorderedMigrationsException < Exception

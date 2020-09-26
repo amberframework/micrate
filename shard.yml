@@ -9,7 +9,20 @@ maintainers:
   - Isaac Sloan <isaac@isaacsloan.com>
   - Dru Jensen <drujensen@gmail.com>
 
+targets:
+  micrate:
+    main: src/cli.cr
+
 dependencies:
+  pg:
+    github: will/crystal-pg
+    version: ~> 0.21.1
+  mysql:
+    github: crystal-lang/crystal-mysql
+    version: ~> 0.11.1
+  sqlite3:
+    github: crystal-lang/crystal-sqlite3
+    version: ~> 0.16.0
   db:
     github: crystal-lang/crystal-db
     version: ~> 0.9.0
