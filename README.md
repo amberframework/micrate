@@ -11,7 +11,7 @@ Micrate currently supports migrations for Postgres, Mysql and SQLite3, but it sh
 To install the standalone binary tool check out the releases page, or use homebrew:
 
 ```
-$ brew tap juanedi/micrate
+$ brew tap amberframework/micrate
 $ brew install micrate
 ```
 
