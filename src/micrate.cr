@@ -159,7 +159,7 @@ module Micrate
   private def self.migrations_by_version
     Dir.entries(migrations_dir)
       .select { |name| File.file? File.join("db/migrations", name) }
-      .select { |name| /^\d+_.+\.sql$/ =~ name }
+      .select { |name| /^\d+.+\.sql$/ =~ name }
       .map { |name| Migration.from_file(name) }
       .index_by { |migration| migration.version }
   end
