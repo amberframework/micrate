@@ -48,25 +48,25 @@ module Micrate
     end
 
     def self.run_up
-      DB.connect do |db|
+      Micrate::DB.connect do |db|
         Micrate.up(db)
       end
     end
 
     def self.run_down
-      DB.connect do |db|
+      Micrate::DB.connect do |db|
         Micrate.down(db)
       end
     end
 
     def self.run_redo
-      DB.connect do |db|
+      Micrate::DB.connect do |db|
         Micrate.redo(db)
       end
     end
 
     def self.run_status
-      DB.connect do |db|
+      Micrate::DB.connect do |db|
         Log.info { "Applied At                  Migration" }
         Log.info { "=======================================" }
         Micrate.migration_status(db).each do |migration, migrated_at|
@@ -86,7 +86,7 @@ module Micrate
     end
 
     def self.run_dbversion
-      DB.connect do |db|
+      Micrate::DB.connect do |db|
         begin
           Log.info { Micrate.dbversion(db) }
         rescue

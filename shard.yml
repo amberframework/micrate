@@ -26,3 +26,8 @@ dependencies:
   db:
     github: crystal-lang/crystal-db
     version: ~> 0.9.0
+
+development_dependencies:
+  spectator:
+    gitlab: arctic-fox/spectator
+    branch: master

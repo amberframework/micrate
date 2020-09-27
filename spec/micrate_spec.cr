@@ -1,6 +1,6 @@
 require "./spec_helper"
 
-describe Micrate do
+Spectator.describe Micrate do
   describe "dbversion" do
     it "returns 0 if table is empty" do
       rows = [] of {Int64, Bool}
