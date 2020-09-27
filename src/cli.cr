@@ -160,9 +160,3 @@ Commands:
     end
   end
 end
-
-Log.define_formatter Micrate::CliFormat, "#{message}" \
-                                         "#{data(before: " -- ")}#{context(before: " -- ")}#{exception}"
-Log.setup(:debug, Log::IOBackend.new(formatter: Micrate::CliFormat))
-
-Micrate::Cli.run
