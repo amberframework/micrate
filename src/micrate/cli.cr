@@ -108,7 +108,7 @@ You should probably check if they need to be updated and rename them so they are
       Log.info { "micrate is a database migration management system for Crystal projects, *heavily* inspired by Goose (https://bitbucket.org/liamstask/goose/).
 
 Usage:
-    set DB_URL environment variable i.e. export DB_URL=postgres://user:pswd@host:port/database
+    set DATABASE_URL environment variable i.e. export DATABASE_URL=postgres://user:pswd@host:port/database
     micrate [options] <subcommand> [subcommand options]
 
 Commands:

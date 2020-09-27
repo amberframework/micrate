@@ -15,7 +15,7 @@ $ brew tap amberframework/micrate
 $ brew install micrate
 ```
 
-Execute `micrate help` for usage instructions. Micrate will connect to the database specified by the `DB_URL` environment variable.
+Execute `micrate help` for usage instructions. Micrate will connect to the database specified by the `DATABASE_URL` environment variable.
 
 To create a new migration use the `create` subcommand. For example, `micrate create add_users_table` will create a new SQL migration file with a name such as `db/migrations/20160524162446_add_users_table.sql` that looks like this:
 
