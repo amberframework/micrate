@@ -1,6 +1,6 @@
 require "./spec_helper"
 
-describe Micrate do
+Spectator.describe Micrate do
   describe "splitting in statements" do
     it "split simple statements" do
       migration = Micrate::Migration.new(20160101120000, "foo.sql", "\

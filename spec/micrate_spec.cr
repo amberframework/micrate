@@ -1,6 +1,6 @@
 require "./spec_helper"
 
-describe Micrate do
+Spectator.describe Micrate do
   describe "dbversion" do
     it "returns 0 if table is empty" do
       rows = [] of {Int64, Bool}
@@ -49,7 +49,7 @@ describe Micrate do
       end
     end
 
-    describe "detecting unordered migrations" do 
+    describe "detecting unordered migrations" do
       it "fails if there are unapplied migrations with older timestamp than current version" do
         migrations = {
           20160523142308 => false,

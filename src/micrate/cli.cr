@@ -1,49 +1,93 @@
 require "log"
 
+require "pg"
+require "mysql"
+require "sqlite3"
+
 module Micrate
   module Cli
+    Log = ::Log.for(self)
+
+    def self.drop_database
+      url = Micrate::DB.connection_url.to_s
+      if url.starts_with? "sqlite3:"
+        path = url.gsub("sqlite3:", "")
+        File.delete(path)
+        Log.info { "Deleted file #{path}" }
+      else
+        name = set_database_to_schema url
+        Micrate::DB.connect do |db|
+          db.exec "DROP DATABASE IF EXISTS #{name};"
+        end
+        Log.info { "Dropped database #{name}" }
+      end
+    end
+
+    def self.create_database
+      url = Micrate::DB.connection_url.to_s
+      if url.starts_with? "sqlite3:"
+        Log.info { "For sqlite3, the database will be created during the first migration." }
+      else
+        name = set_database_to_schema url
+        Micrate::DB.connect do |db|
+          db.exec "CREATE DATABASE #{name};"
+        end
+        Log.info { "Created database #{name}" }
+      end
+    end
+
+    def self.set_database_to_schema(url)
+      uri = URI.parse(url)
+      if path = uri.path
+        Micrate::DB.connection_url = url.gsub(path, "/#{uri.scheme}")
+        path.gsub("/", "")
+      else
+        Log.error { "Could not determine database name" }
+      end
+    end
+
     def self.run_up
-      DB.connect do |db|
+      Micrate::DB.connect do |db|
         Micrate.up(db)
       end
     end
 
     def self.run_down
-      DB.connect do |db|
+      Micrate::DB.connect do |db|
         Micrate.down(db)
       end
     end
 
     def self.run_redo
-      DB.connect do |db|
+      Micrate::DB.connect do |db|
         Micrate.redo(db)
       end
     end
 
     def self.run_status
-      DB.connect do |db|
-        puts "Applied At                  Migration"
-        puts "======================================="
+      Micrate::DB.connect do |db|
+        Log.info { "Applied At                  Migration" }
+        Log.info { "=======================================" }
         Micrate.migration_status(db).each do |migration, migrated_at|
           ts = migrated_at.nil? ? "Pending" : migrated_at.to_s
-          puts "%-24s -- %s\n" % [ts, migration.name]
+          Log.info { "%-24s -- %s\n" % [ts, migration.name] }
         end
       end
     end
 
-    def self.run_create
+    def self.run_scaffold
       if ARGV.size < 1
         raise "Migration name required"
       end
 
       migration_file = Micrate.create(ARGV.shift, Micrate.migrations_dir, Time.local)
-      puts "Created #{migration_file}"
+      Log.info { "Created #{migration_file}" }
     end
 
     def self.run_dbversion
-      DB.connect do |db|
+      Micrate::DB.connect do |db|
         begin
-          puts Micrate.dbversion(db)
+          Log.info { Micrate.dbversion(db) }
         rescue
           raise "Could not read dbversion. Please make sure the database exists and verify the connection URL."
         end
@@ -51,33 +95,34 @@ module Micrate
     end
 
     def self.report_unordered_migrations(conflicting)
-      puts "The following migrations haven't been applied but have a timestamp older then the current version:"
+      Log.info { "The following migrations haven't been applied but have a timestamp older then the current version:" }
       conflicting.each do |version|
-        puts "    #{Migration.from_version(version).name}"
+        Log.info { "    #{Migration.from_version(version).name}" }
       end
-      puts "
+      Log.info { "
 Micrate will not run these migrations because they may have been written with an older database model in mind.
-You should probably check if they need to be updated and rename them so they are considered a newer version."
+You should probably check if they need to be updated and rename them so they are considered a newer version." }
     end
 
     def self.print_help
-      puts "micrate is a database migration management system for Crystal projects, *heavily* inspired by Goose (https://bitbucket.org/liamstask/goose/).
+      Log.info { "micrate is a database migration management system for Crystal projects, *heavily* inspired by Goose (https://bitbucket.org/liamstask/goose/).
 
 Usage:
+    set DATABASE_URL environment variable i.e. export DATABASE_URL=postgres://user:pswd@host:port/database
     micrate [options] <subcommand> [subcommand options]
 
 Commands:
+    create     Create the database (permissions required)
+    drop       Drop the database (permissions required)
     up         Migrate the DB to the most recent version available
     down       Roll back the version by 1
     redo       Re-run the latest migration
-    status     dump the migration status for the current DB
-    create     Create the scaffolding for a new migration
-    dbversion  Print the current version of the database"
+    status     Dump the migration status for the current DB
+    scaffold   Create the scaffolding for a new migration
+    dbversion  Print the current version of the database" }
     end
 
     def self.run
-      setup_logger
-
       if ARGV.empty?
         print_help
         return
@@ -85,6 +130,10 @@ Commands:
 
       begin
         case ARGV.shift
+        when "create"
+          create_database
+        when "drop"
+          drop_database
         when "up"
           run_up
         when "down"
@@ -93,8 +142,8 @@ Commands:
           run_redo
         when "status"
           run_status
-        when "create"
-          run_create
+        when "scaffold"
+          run_scaffold
         when "dbversion"
           run_dbversion
         else
@@ -104,19 +153,8 @@ Commands:
         report_unordered_migrations(e.versions)
         exit 1
       rescue e : Exception
-        puts e.message
+        Log.error(exception: e) { "Micrate failed!" }
         exit 1
-      end
-    end
-
-    def self.setup_logger
-      Micrate.logger = Log.for("micrate").tap do |l|
-        backend = Log::IOBackend.new(STDOUT)
-        backend.formatter = Log::Formatter.new do |entry, io|
-          io << entry.message
-        end
-        l.backend = backend
-        l.level = Log::Severity::Info
       end
     end
   end
