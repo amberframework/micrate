@@ -96,28 +96,28 @@ module Micrate
     plan = migration_plan(status, current, target, direction)
 
     if plan.empty?
-      logger.info {"No migrations to run. current version: #{current}"}
+      logger.info { "No migrations to run. current version: #{current}" }
       return :nop
     end
 
-    logger.info {"Migrating db, current version: #{current}, target: #{target}"}
+    logger.info { "Migrating db, current version: #{current}, target: #{target}" }
 
     plan.each do |version|
       migration = all_migrations[version]
-      begin
 
-        # Wrap migration in a transaction
-        DB.exec("BEGIN;\n", db)
+      # Wrap migration in a transaction
+      db.transaction do |tx|
         migration.statements(direction).each do |stmt|
-          DB.exec(stmt, db)
+          db.exec(stmt)
         end
-        DB.exec("\nCOMMIT;", db)
 
         DB.record_migration(migration, direction, db)
 
-        logger.info {"OK   #{migration.name}"}
+        tx.commit
+        logger.info { "OK   #{migration.name}" }
       rescue e : Exception
-        logger.error {"An error occurred executing migration #{migration.version}. Error message is: #{e.message}"}
+        tx.rollback
+        logger.error { "Rollback. An error occurred executing migration #{migration.version}. Error message is: #{e.message}" }
         return :error
       end
     end
@@ -126,7 +126,7 @@ module Micrate
 
   private def self.verify_unordered_migrations(current, status : Hash(Int, Bool))
     migrations = status.select { |version, is_applied| !is_applied && version < current }
-                       .keys
+      .keys
 
     if !migrations.empty?
       raise UnorderedMigrationsException.new(migrations)
@@ -151,10 +151,10 @@ module Micrate
 
   private def self.migrations_by_version
     Dir.entries(migrations_dir)
-       .select { |name| File.file? File.join("db/migrations", name) }
-       .select { |name| /^\d+_.+\.sql$/ =~ name }
-       .map { |name| Migration.from_file(name) }
-       .index_by { |migration| migration.version }
+      .select { |name| File.file? File.join("db/migrations", name) }
+      .select { |name| /^\d+_.+\.sql$/ =~ name }
+      .map { |name| Migration.from_file(name) }
+      .index_by { |migration| migration.version }
   end
 
   def self.migration_plan(status : Hash(Migration, Time?), current : Int, target : Int, direction)
@@ -170,13 +170,13 @@ module Micrate
 
     if direction == :forward
       all_versions.keys
-                  .sort
-                  .select { |v| v > current && v <= target }
+        .sort
+        .select { |v| v > current && v <= target }
     else
       all_versions.keys
-                  .sort
-                  .reverse
-                  .select { |v| v <= current && v > target }
+        .sort
+        .reverse
+        .select { |v| v <= current && v > target }
     end
   end
 
