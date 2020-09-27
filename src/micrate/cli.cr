@@ -1,5 +1,4 @@
 require "log"
-require "./micrate"
 
 require "pg"
 require "mysql"
