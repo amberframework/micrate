@@ -9,6 +9,10 @@ maintainers:
   - Isaac Sloan <isaac@isaacsloan.com>
   - Dru Jensen <drujensen@gmail.com>
 
+targets:
+  micrate:
+    main: src/micrate-bin.cr
+
 dependencies:
   pg:
     github: will/crystal-pg
