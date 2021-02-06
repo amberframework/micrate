@@ -16,16 +16,16 @@ targets:
 dependencies:
   pg:
     github: will/crystal-pg
-    version: ~> 0.21.1
+    version: ~> 0.23.1
   mysql:
     github: crystal-lang/crystal-mysql
-    version: ~> 0.11.1
+    version: ~> 0.13.0
   sqlite3:
     github: crystal-lang/crystal-sqlite3
-    version: ~> 0.16.0
+    version: ~> 0.18.0
   db:
     github: crystal-lang/crystal-db
-    version: ~> 0.9.0
+    version: ~> 0.10.0
 
 development_dependencies:
   spectator:
