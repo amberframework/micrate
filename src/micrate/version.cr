@@ -1,3 +1,3 @@
 module Micrate
-  VERSION = "0.9.0"
+  VERSION = "v0.10.0"
 end
