@@ -1,6 +1,6 @@
 name: micrate
-version: 0.10.0
-crystal: 1.0.0
+version: 0.11.0
+crystal: ">= 0.36.1, < 2.0.0"
 
 authors:
   - Juan Edi <jedi11235@gmail.com>
@@ -14,15 +14,6 @@ targets:
     main: src/micrate-bin.cr
 
 dependencies:
-  pg:
-    github: will/crystal-pg
-    version: ~> 0.23.1
-  mysql:
-    github: crystal-lang/crystal-mysql
-    version: ~> 0.13.0
-  sqlite3:
-    github: crystal-lang/crystal-sqlite3
-    version: ~> 0.18.0
   db:
     github: crystal-lang/crystal-db
     version: ~> 0.10.0
@@ -31,3 +22,12 @@ development_dependencies:
   spectator:
     gitlab: arctic-fox/spectator
     branch: master
+  pg:
+    github: will/crystal-pg
+    version: ~> 0.24.0
+  mysql:
+    github: crystal-lang/crystal-mysql
+    version: ~> 0.13.0
+  sqlite3:
+    github: crystal-lang/crystal-sqlite3
+    version: ~> 0.18.0
