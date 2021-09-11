@@ -1,9 +1,5 @@
 require "log"
 
-require "pg"
-require "mysql"
-require "sqlite3"
-
 module Micrate
   module Cli
     Log = ::Log.for(self)
