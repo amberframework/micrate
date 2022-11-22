@@ -23,17 +23,17 @@ dependencies:
   db:
     github: crystal-lang/crystal-db
     version: ~> 0.11.0
+  pg:
+    github: will/crystal-pg
+    version: ~> 0.26.0
+  mysql:
+    github: crystal-lang/crystal-mysql
+    version: ~> 0.14.0
+  sqlite3:
+    github: crystal-lang/crystal-sqlite3
+    version: ~> 0.19.0
 
 development_dependencies:
   spectator:
     gitlab: arctic-fox/spectator
-    branch: master
-  pg:
-    github: will/crystal-pg
-    version: ~> 0.24.0
-  mysql:
-    github: crystal-lang/crystal-mysql
-    version: ~> 0.13.0
-  sqlite3:
-    github: crystal-lang/crystal-sqlite3
-    version: ~> 0.18.0
+    version: ~> 0.11.3
