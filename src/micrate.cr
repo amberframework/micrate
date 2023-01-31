@@ -115,10 +115,10 @@ module Micrate
       # Wrap migration in a transaction
       db.transaction do |tx|
         migration.statements(direction).each do |stmt|
-          db.exec(stmt)
+          tx.connection.exec(stmt)
         end
 
-        DB.record_migration(migration, direction, db)
+        DB.record_migration(migration, direction, tx.connection)
 
         tx.commit
         Log.info { "OK   #{migration.name}" }
