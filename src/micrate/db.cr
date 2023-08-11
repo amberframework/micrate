@@ -3,11 +3,7 @@ require "./db/*"
 
 module Micrate
   module DB
-    @@connection_url = ENV["DATABASE_URL"]?
-
-    def self.connection_url
-      @@connection_url
-    end
+    class_getter connection_url : String? { ENV["DATABASE_URL"]? }
 
     def self.connection_url=(connection_url)
       @@dialect = nil
@@ -16,12 +12,12 @@ module Micrate
 
     def self.connect
       validate_connection_url
-      ::DB.connect(@@connection_url.not_nil!)
+      ::DB.connect(self.connection_url.not_nil!)
     end
 
     def self.connect(&block)
       validate_connection_url
-      ::DB.open @@connection_url.not_nil! do |db|
+      ::DB.open self.connection_url.not_nil! do |db|
         yield db
       end
     end
@@ -55,11 +51,11 @@ module Micrate
 
     private def self.dialect
       validate_connection_url
-      @@dialect ||= Dialect.from_connection_url(@@connection_url.not_nil!)
+      @@dialect ||= Dialect.from_connection_url(self.connection_url.not_nil!)
     end
 
     private def self.validate_connection_url
-      if !@@connection_url
+      if !self.connection_url
         raise "No database connection URL is configured. Please set the DATABASE_URL environment variable."
       end
     end
