@@ -1,7 +1,9 @@
 require "log"
-require "pg"
-require "mysql"
-require "sqlite3"
+{% for db in %w(pg mysql sqlite3) %}
+  {% if file_exists?("lib/" + db) %}
+    require {{ db }}
+  {% end %}
+{% end %}
 
 require "./micrate"
 
