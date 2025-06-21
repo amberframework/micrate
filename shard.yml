@@ -11,7 +11,7 @@ maintainers:
 
 targets:
   micrate:
-    main: src/micrate-bin.cr
+    main: src/micrate-wrapper.cr
 
 scripts:
   postinstall: shards build
@@ -22,16 +22,6 @@ executables:
 dependencies:
   db:
     github: crystal-lang/crystal-db
-    version: ~> 0.11.0
-  pg:
-    github: will/crystal-pg
-    version: ~> 0.26.0
-  mysql:
-    github: crystal-lang/crystal-mysql
-    version: ~> 0.14.0
-  sqlite3:
-    github: crystal-lang/crystal-sqlite3
-    version: ~> 0.19.0
 
 development_dependencies:
   spectator:
