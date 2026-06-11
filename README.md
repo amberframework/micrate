@@ -108,7 +108,7 @@ This allows you to programatically use micrate's features. You'll see the `Micra
 require "micrate"
 require "pg"
 
-Micrate::DB.connection_url = "postgresql://..."
+ENV["DATABASE_URL"] = "postgresql://..."
 Micrate::Cli.run
 ```
 
