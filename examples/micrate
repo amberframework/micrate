@@ -8,5 +8,10 @@
 require "../src/micrate"
 require "pg"
 
-Micrate::DB.connection_url = "postgresql://..."
+# The CLI uses the DATABASE_URL environment variable by default:
+# ENV["DATABASE_URL"] = "postgresql://..."
 Micrate::Cli.run
+
+# Or to run migrations programmatically:
+# runner = Micrate::Runner.new("postgresql://...")
+# runner.connect { |db| runner.up(db) }
