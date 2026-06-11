@@ -77,8 +77,8 @@ module Micrate
 
     def self.from_version(version)
       file_name = Dir.entries(Micrate.migrations_dir)
-        .find { |name| name.starts_with? version.to_s }
-        .not_nil!
+        .find(&.starts_with?(version.to_s))
+
       self.from_file(file_name)
     end
   end

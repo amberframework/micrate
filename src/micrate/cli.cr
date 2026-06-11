@@ -11,7 +11,7 @@ module Micrate
         File.delete(path)
         Log.info { "Deleted file #{path}" }
       else
-        name = set_database_to_schema url
+        name = extract_schema_name url
         Micrate::DB.connect do |db|
           db.exec "DROP DATABASE IF EXISTS #{name};"
         end
@@ -24,7 +24,7 @@ module Micrate
       if url.starts_with? "sqlite3:"
         Log.info { "For sqlite3, the database will be created during the first migration." }
       else
-        name = set_database_to_schema url
+        name = extract_schema_name url
         Micrate::DB.connect do |db|
           db.exec "CREATE DATABASE #{name};"
         end
@@ -32,7 +32,7 @@ module Micrate
       end
     end
 
-    def self.set_database_to_schema(url)
+    def self.extract_schema_name(url)
       uri = URI.parse(url)
       if path = uri.path
         Micrate::DB.connection_url = url.gsub(path, "/#{uri.scheme}")
