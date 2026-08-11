@@ -4,8 +4,10 @@ require "./db/*"
 module Micrate
   class Runner
     getter connection_url : String
+    getter migrations_dir : String
 
-    def initialize(connection_url : String? = ENV["DATABASE_URL"]?)
+    def initialize(connection_url : String? = ENV["DATABASE_URL"]?,
+                   @migrations_dir : String = Micrate.migrations_dir)
       url = connection_url
       if !url
         raise "No database connection URL is configured. Please set the DATABASE_URL environment variable."
@@ -43,11 +45,7 @@ module Micrate
     def get_migration_status(migration, db) : Time?
       rows = dialect.query_migration_status(migration, db)
 
-      if !rows.empty? && rows[0][1]
-        rows[0][0]
-      else
-        nil
-      end
+      rows[0][0] if !rows.empty? && rows[0][1]
     end
 
     private getter dialect : DB::Dialect do
@@ -63,7 +61,7 @@ module Micrate
     end
 
     def up(db)
-      all_migrations = Micrate.migrations_by_version
+      all_migrations = Micrate.migrations_by_version(migrations_dir)
 
       if all_migrations.size == 0
         Log.warn { "No migrations found!" }
@@ -71,12 +69,12 @@ module Micrate
       end
 
       current = dbversion(db)
-      target = all_migrations.keys.sort!.last
+      target = all_migrations.keys.max_by { |version| Micrate.version_order_key(version) }
       migrate(all_migrations, current, target, db)
     end
 
     def down(db)
-      all_migrations = Micrate.migrations_by_version
+      all_migrations = Micrate.migrations_by_version(migrations_dir)
 
       current = dbversion(db)
       target = Micrate.previous_version(current, all_migrations.keys)
@@ -84,7 +82,7 @@ module Micrate
     end
 
     def redo(db)
-      all_migrations = Micrate.migrations_by_version
+      all_migrations = Micrate.migrations_by_version(migrations_dir)
 
       current = dbversion(db)
       previous = Micrate.previous_version(current, all_migrations.keys)
@@ -97,7 +95,7 @@ module Micrate
     def migration_status(db) : Hash(Migration, Time?)
       # ensure that migration table exists
       dbversion(db)
-      migration_status(Micrate.migrations_by_version.values, db)
+      migration_status(Micrate.migrations_by_version(migrations_dir).values, db)
     end
 
     def migration_status(migrations : Array(Migration), db) : Hash(Migration, Time?)

@@ -69,17 +69,17 @@ module Micrate
       s.split("--")[0].strip.ends_with? ";"
     end
 
-    def self.from_file(file_name)
-      full_path = File.join(Micrate.migrations_dir, file_name)
+    def self.from_file(file_name, migrations_dir = Micrate.migrations_dir)
+      full_path = File.join(migrations_dir, file_name)
       version = file_name.split("_")[0].to_i64
       new(version, file_name, File.read(full_path))
     end
 
-    def self.from_version(version)
-      file_name = Dir.entries(Micrate.migrations_dir)
+    def self.from_version(version, migrations_dir = Micrate.migrations_dir)
+      file_name = Dir.entries(migrations_dir)
         .find(&.starts_with?(version.to_s))
 
-      self.from_file(file_name)
+      from_file(file_name, migrations_dir)
     end
   end
 end

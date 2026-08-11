@@ -4,12 +4,16 @@ module Micrate
   module Cli
     Log = ::Log.for(self)
 
-    def self.drop_database
-      url = ENV["DATABASE_URL"]? || raise "DATABASE_URL not set"
+    def self.drop_database(connection_url : String? = ENV["DATABASE_URL"]?)
+      url = connection_url || raise "DATABASE_URL not set"
       if url.starts_with? "sqlite3:"
-        path = url.gsub("sqlite3:", "")
-        File.delete(path)
-        Log.info { "Deleted file #{path}" }
+        path = sqlite_path(url)
+        if File.exists?(path)
+          File.delete(path)
+          Log.info { "Deleted file #{path}" }
+        else
+          Log.info { "Database file does not exist: #{path}" }
+        end
       else
         root_url, name = extract_schema_name url
         runner = Micrate::Runner.new(root_url)
@@ -20,8 +24,8 @@ module Micrate
       end
     end
 
-    def self.create_database
-      url = ENV["DATABASE_URL"]? || raise "DATABASE_URL not set"
+    def self.create_database(connection_url : String? = ENV["DATABASE_URL"]?)
+      url = connection_url || raise "DATABASE_URL not set"
       if url.starts_with? "sqlite3:"
         Log.info { "For sqlite3, the database will be created during the first migration." }
       else
@@ -45,29 +49,33 @@ module Micrate
       end
     end
 
-    def self.run_up
-      runner = Micrate::Runner.new
+    def self.run_up(connection_url : String? = ENV["DATABASE_URL"]?,
+                    migrations_dir : String = Micrate.migrations_dir)
+      runner = Micrate::Runner.new(connection_url, migrations_dir)
       runner.connect do |db|
         runner.up(db)
       end
     end
 
-    def self.run_down
-      runner = Micrate::Runner.new
+    def self.run_down(connection_url : String? = ENV["DATABASE_URL"]?,
+                      migrations_dir : String = Micrate.migrations_dir)
+      runner = Micrate::Runner.new(connection_url, migrations_dir)
       runner.connect do |db|
         runner.down(db)
       end
     end
 
-    def self.run_redo
-      runner = Micrate::Runner.new
+    def self.run_redo(connection_url : String? = ENV["DATABASE_URL"]?,
+                      migrations_dir : String = Micrate.migrations_dir)
+      runner = Micrate::Runner.new(connection_url, migrations_dir)
       runner.connect do |db|
         runner.redo(db)
       end
     end
 
-    def self.run_status
-      runner = Micrate::Runner.new
+    def self.run_status(connection_url : String? = ENV["DATABASE_URL"]?,
+                        migrations_dir : String = Micrate.migrations_dir)
+      runner = Micrate::Runner.new(connection_url, migrations_dir)
       runner.connect do |db|
         Log.info { "Applied At                  Migration" }
         Log.info { "=======================================" }
@@ -78,24 +86,24 @@ module Micrate
       end
     end
 
-    def self.run_scaffold
-      if ARGV.size < 1
+    def self.run_scaffold(name : String? = ARGV.shift,
+                          migrations_dir : String = Micrate.migrations_dir)
+      if name.nil? || name.empty?
         raise "Migration name required"
       end
 
-      migration_file = Micrate.create(ARGV.shift, Micrate.migrations_dir, Time.local)
+      migration_file = Micrate.create(name, migrations_dir, Time.utc)
       Log.info { "Created #{migration_file}" }
     end
 
-    def self.run_dbversion
-      runner = Micrate::Runner.new
+    def self.run_dbversion(connection_url : String? = ENV["DATABASE_URL"]?,
+                           migrations_dir : String = Micrate.migrations_dir)
+      runner = Micrate::Runner.new(connection_url, migrations_dir)
       runner.connect do |db|
-        begin
-          Log.info { runner.dbversion(db) }
-        rescue
-          raise "Could not read dbversion. Please make sure the database exists and verify the connection URL."
-        end
+        Log.info { runner.dbversion(db) }
       end
+    rescue
+      raise "Could not read dbversion. Please make sure the database exists and verify the connection URL."
     end
 
     def self.report_unordered_migrations(conflicting)
@@ -103,27 +111,38 @@ module Micrate
       conflicting.each do |version|
         Log.info { "    #{Migration.from_version(version).name}" }
       end
-      Log.info { "
-Micrate will not run these migrations because they may have been written with an older database model in mind.
-You should probably check if they need to be updated and rename them so they are considered a newer version." }
+      Log.info do
+        <<-MESSAGE
+          Micrate will not run these migrations because they may have been written with an older database model in mind.
+          You should probably check if they need to be updated and rename them so they are considered a newer version.
+          MESSAGE
+      end
+    end
+
+    private def self.sqlite_path(url : String) : String
+      url.sub(/^sqlite3:(?:\/\/)?/, "")
     end
 
     def self.print_help
-      Log.info { "micrate is a database migration management system for Crystal projects, *heavily* inspired by Goose (https://bitbucket.org/liamstask/goose/).
+      Log.info do
+        <<-HELP
+          micrate is a database migration management system for Crystal projects, *heavily* inspired by Goose (https://bitbucket.org/liamstask/goose/).
 
-Usage:
-    set DATABASE_URL environment variable i.e. export DATABASE_URL=postgres://user:pswd@host:port/database
-    micrate [options] <subcommand> [subcommand options]
+          Usage:
+              set DATABASE_URL environment variable i.e. export DATABASE_URL=postgres://user:pswd@host:port/database
+              micrate [options] <subcommand> [subcommand options]
 
-Commands:
-    create     Create the database (permissions required)
-    drop       Drop the database (permissions required)
-    up         Migrate the DB to the most recent version available
-    down       Roll back the version by 1
-    redo       Re-run the latest migration
-    status     Dump the migration status for the current DB
-    scaffold   Create the scaffolding for a new migration
-    dbversion  Print the current version of the database" }
+          Commands:
+              create     Create the database (permissions required)
+              drop       Drop the database (permissions required)
+              up         Migrate the DB to the most recent version available
+              down       Roll back the version by 1
+              redo       Re-run the latest migration
+              status     Dump the migration status for the current DB
+              scaffold   Create the scaffolding for a new migration
+              dbversion  Print the current version of the database
+          HELP
+      end
     end
 
     def self.run

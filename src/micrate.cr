@@ -13,7 +13,10 @@ module Micrate
   end
 
   def self.create(name, dir, time)
-    timestamp = time.to_s("%Y%m%d%H%M%S")
+    # Amber's generators include milliseconds so several migrations created in
+    # the same second retain a deterministic order. Micrate now emits the same
+    # format while continuing to read historic second-resolution filenames.
+    timestamp = time.to_utc.to_s("%Y%m%d%H%M%S%3N")
     filename = File.join(dir, "#{timestamp}_#{name}.sql")
 
     migration_template = "\
@@ -32,7 +35,10 @@ module Micrate
   end
 
   private def self.verify_unordered_migrations(current, status : Hash(Int, Bool))
-    migrations = status.select { |version, is_applied| !is_applied && version < current }
+    current_order = version_order_key(current)
+    migrations = status.select do |version, is_applied|
+      !is_applied && version_order_key(version) < current_order
+    end
       .keys
 
     if !migrations.empty?
@@ -41,9 +47,10 @@ module Micrate
   end
 
   def self.previous_version(current, all_versions)
-    all_previous = all_versions.select { |version| version < current }
+    current_order = version_order_key(current)
+    all_previous = all_versions.select { |version| version_order_key(version) < current_order }
     if !all_previous.empty?
-      return all_previous.max
+      return all_previous.max_by { |version| version_order_key(version) }
     end
 
     if all_versions.includes? current
@@ -56,11 +63,13 @@ module Micrate
     end
   end
 
-  def self.migrations_by_version
-    Dir.entries(migrations_dir)
-      .select { |name| File.file? File.join(migrations_dir, name) }
+  def self.migrations_by_version(dir = migrations_dir)
+    return {} of Int64 => Migration unless Dir.exists?(dir)
+
+    Dir.entries(dir)
+      .select { |name| File.file? File.join(dir, name) }
       .select { |name| /^\d+.+\.sql$/ =~ name }
-      .map { |name| Migration.from_file(name) }
+      .map { |name| Migration.from_file(name, dir) }
       .index_by(&.version)
   end
 
@@ -77,14 +86,31 @@ module Micrate
 
     if direction == :forward
       all_versions.keys
-        .sort!
-        .select { |v| v > current && v <= target }
+        .sort_by! { |version| version_order_key(version) }
+        .select do |version|
+          version_order_key(version) > version_order_key(current) &&
+            version_order_key(version) <= version_order_key(target)
+        end
     else
       all_versions.keys
-        .sort!
+        .sort_by! { |version| version_order_key(version) }
         .reverse!
-        .select { |v| v <= current && v > target }
+        .select do |version|
+          version_order_key(version) <= version_order_key(current) &&
+            version_order_key(version) > version_order_key(target)
+        end
     end
+  end
+
+  # Micrate historically generated 14-digit second-resolution timestamps while
+  # Amber generated 17-digit millisecond-resolution timestamps. Comparing the
+  # raw integers makes every millisecond migration look newer than every
+  # second-resolution migration, regardless of its actual date. Scale the
+  # historic format only for ordering; the stored migration identity remains
+  # unchanged for backwards compatibility.
+  def self.version_order_key(version : Int) : Int64
+    raw = version.to_i64
+    raw.to_s.size == 14 ? raw * 1000 : raw
   end
 
   def self.extract_dbversion(rows)
