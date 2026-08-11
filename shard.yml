@@ -22,8 +22,7 @@ executables:
 dependencies:
   db:
     github: crystal-lang/crystal-db
-    # v0.13.1
-    commit: 3eaac85a5d4b7bee565b55dcb584e84e29fc5567
+    version: 0.13.1
 
 development_dependencies:
   spectator:
