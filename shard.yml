@@ -1,6 +1,6 @@
 name: micrate
-version: 0.15.1
-crystal: ">= 0.36.1, < 2.0.0"
+version: 0.16.0-beta.1
+crystal: ">= 1.20.0, < 2.0.0"
 
 authors:
   - Juan Edi <jedi11235@gmail.com>
@@ -22,8 +22,17 @@ executables:
 dependencies:
   db:
     github: crystal-lang/crystal-db
+    version: 0.13.1
 
 development_dependencies:
   spectator:
     gitlab: arctic-fox/spectator
     version: ~> 0.11.3
+  ameba:
+    github: crystal-ameba/ameba
+    # Crystal 1.21 compatibility pending Ameba 1.7.0.
+    commit: cdd58b34b0d8a9c785d67183a7a8f07541549e55
+  sqlite3:
+    github: crystal-lang/crystal-sqlite3
+    # v0.21.0
+    commit: c58cea290c85e2a33dc8f494a5f04b519d3e0274

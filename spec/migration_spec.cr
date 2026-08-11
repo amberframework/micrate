@@ -101,5 +101,5 @@ baz;")
 end
 
 def statements(migration, direction)
-  migration.statements(direction).map { |stmt| stmt.strip }
+  migration.statements(direction).map(&.strip)
 end

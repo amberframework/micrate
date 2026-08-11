@@ -8,7 +8,17 @@ Micrate currently supports migrations for Postgres, Mysql and SQLite3, but it sh
 
 ## Command line
 
-To install the standalone binary tool check out the releases page, or use homebrew:
+Amber CLI ships Micrate inside the precompiled `amber` executable. In an Amber
+application, prefer the matching commands so no second migration binary is
+required:
+
+```console
+amber database migrate
+amber database rollback
+amber database status
+```
+
+To install the standalone binary tool, check the releases page or use Homebrew:
 
 ```
 $ brew tap amberframework/micrate
@@ -17,7 +27,10 @@ $ brew install micrate
 
 Execute `micrate help` for usage instructions. Micrate will connect to the database specified by the `DATABASE_URL` environment variable.
 
-To create a new migration use the `scaffold` subcommand. For example, `micrate scaffold add_users_table` will create a new SQL migration file with a name such as `db/migrations/20160524162446_add_users_table.sql` that looks like this:
+To create a new migration use the `scaffold` subcommand. For example,
+`micrate scaffold add_users_table` will create a new SQL migration file with a
+millisecond-resolution name such as
+`db/migrations/20160524162446123_add_users_table.sql` that looks like this:
 
 ```sql
 -- +micrate Up
@@ -96,7 +109,24 @@ dependencies:
     github: amberframework/micrate
 ```
 
-This allows you to programatically use micrate's features. You'll see the `Micrate` module has an equivalent for every CLI command. If you need to use micrate's CLI without installing the tool (which could be convenient in a CI environment), you can write a runner script as follows:
+This allows you to programmatically use Micrate's features. Use a
+`Micrate::Runner` when embedding migrations so the connection and migrations
+directory remain explicit and do not leak through global state:
+
+```crystal
+require "micrate"
+require "sqlite3"
+
+runner = Micrate::Runner.new(
+  "sqlite3:./db/app_development.db",
+  "./db/migrations"
+)
+
+runner.connect { |database| runner.up(database) }
+```
+
+If you need to use Micrate's CLI without installing the tool (which can be
+convenient in CI), write a runner script as follows:
 
 ```crystal
 #! /usr/bin/env crystal
@@ -108,7 +138,7 @@ This allows you to programatically use micrate's features. You'll see the `Micra
 require "micrate"
 require "pg"
 
-Micrate::DB.connection_url = "postgresql://..."
+ENV["DATABASE_URL"] = "postgresql://..."
 Micrate::Cli.run
 ```
 
