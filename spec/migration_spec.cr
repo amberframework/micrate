@@ -98,6 +98,28 @@ baz;")
       ])
     end
   end
+
+  describe ".from_version" do
+    it "raises when migration version does not exist" do
+      Dir.mkdir_p("db/migrations")
+      expect_raises(Exception, "Migration 99999999999999 not found") do
+        Micrate::Migration.from_version(99999999999999_i64)
+      end
+    end
+
+    it "loads existing migration from version" do
+      Dir.mkdir_p("db/migrations")
+      test_file = "db/migrations/20260101000000_test.sql"
+      File.write(test_file, "-- +micrate Up\n-- +micrate Down\n")
+      begin
+        migration = Micrate::Migration.from_version(20260101000000_i64)
+        migration.version.should eq(20260101000000_i64)
+        migration.name.should eq("20260101000000_test.sql")
+      ensure
+        File.delete(test_file) if File.exists?(test_file)
+      end
+    end
+  end
 end
 
 def statements(migration, direction)
