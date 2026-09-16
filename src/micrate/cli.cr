@@ -5,7 +5,7 @@ module Micrate
     Log = ::Log.for(self)
 
     def self.drop_database
-      url = ENV["DATABASE_URL"]? || raise "DATABASE_URL not set"
+      url = Micrate.connection_url || ENV["DATABASE_URL"]? || raise "DATABASE_URL not set"
       if url.starts_with? "sqlite3:"
         path = url.gsub("sqlite3:", "")
         File.delete(path)
@@ -21,7 +21,7 @@ module Micrate
     end
 
     def self.create_database
-      url = ENV["DATABASE_URL"]? || raise "DATABASE_URL not set"
+      url = Micrate.connection_url || ENV["DATABASE_URL"]? || raise "DATABASE_URL not set"
       if url.starts_with? "sqlite3:"
         Log.info { "For sqlite3, the database will be created during the first migration." }
       else
@@ -46,28 +46,28 @@ module Micrate
     end
 
     def self.run_up
-      runner = Micrate::Runner.new
+      runner = Micrate.default_runner
       runner.connect do |db|
         runner.up(db)
       end
     end
 
     def self.run_down
-      runner = Micrate::Runner.new
+      runner = Micrate.default_runner
       runner.connect do |db|
         runner.down(db)
       end
     end
 
     def self.run_redo
-      runner = Micrate::Runner.new
+      runner = Micrate.default_runner
       runner.connect do |db|
         runner.redo(db)
       end
     end
 
     def self.run_status
-      runner = Micrate::Runner.new
+      runner = Micrate.default_runner
       runner.connect do |db|
         Log.info { "Applied At                  Migration" }
         Log.info { "=======================================" }
@@ -88,7 +88,7 @@ module Micrate
     end
 
     def self.run_dbversion
-      runner = Micrate::Runner.new
+      runner = Micrate.default_runner
       runner.connect do |db|
         begin
           Log.info { runner.dbversion(db) }

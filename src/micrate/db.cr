@@ -4,6 +4,7 @@ require "./db/*"
 module Micrate
   class Runner
     getter connection_url : String
+    getter dialect : DB::Dialect
 
     def initialize(connection_url : String? = ENV["DATABASE_URL"]?)
       url = connection_url
@@ -11,6 +12,7 @@ module Micrate
         raise "No database connection URL is configured. Please set the DATABASE_URL environment variable."
       end
       @connection_url = url
+      @dialect = DB::Dialect.from_connection_url(@connection_url)
     end
 
     def connect
@@ -48,10 +50,6 @@ module Micrate
       else
         nil
       end
-    end
-
-    private getter dialect : DB::Dialect do
-      DB::Dialect.from_connection_url(@connection_url)
     end
 
     def dbversion(db)
@@ -141,6 +139,26 @@ module Micrate
         end
       end
       :success
+    end
+  end
+
+  module DB
+    def self.connection_url : String?
+      Micrate.connection_url
+    end
+
+    def self.connection_url=(url : String?)
+      Micrate.connection_url = url
+    end
+
+    def self.connect
+      Micrate.default_runner.connect
+    end
+
+    def self.connect(&)
+      Micrate.default_runner.connect do |db|
+        yield db
+      end
     end
   end
 end

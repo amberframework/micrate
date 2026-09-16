@@ -31,6 +31,40 @@ module Micrate
     filename
   end
 
+  @@connection_url : String? = ENV["DATABASE_URL"]?
+
+  def self.connection_url : String?
+    @@connection_url
+  end
+
+  def self.connection_url=(connection_url : String?)
+    @@connection_url = connection_url
+  end
+
+  def self.default_runner : Runner
+    Runner.new(@@connection_url)
+  end
+
+  def self.dbversion(db)
+    default_runner.dbversion(db)
+  end
+
+  def self.up(db)
+    default_runner.up(db)
+  end
+
+  def self.down(db)
+    default_runner.down(db)
+  end
+
+  def self.redo(db)
+    default_runner.redo(db)
+  end
+
+  def self.migration_status(db)
+    default_runner.migration_status(db)
+  end
+
   private def self.verify_unordered_migrations(current, status : Hash(Int, Bool))
     migrations = status.select { |version, is_applied| !is_applied && version < current }
       .keys
