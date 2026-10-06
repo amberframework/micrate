@@ -1,0 +1,12 @@
+card_version: 1
+library: micrate
+applies_to: "~> 0.15.0"
+docs_entries:
+  - src/micrate.cr
+notes:
+  - symbol: Micrate::Migration.from_file
+    text: "Micrate migration files are named <timestamp>_<description>.sql under db/migrations. Micrate::Migration.from_file(file_name) reads a named file from that directory; mark the SQL sections with -- +micrate Up and -- +micrate Down."
+  - symbol: Micrate::Migration#statements
+    text: "statements(:forward) and statements(:backwards) return Array(String) for the matching Up or Down section. Wrap SQL with internal semicolons in -- +micrate StatementBegin and -- +micrate StatementEnd so the block stays one statement."
+  - symbol: Micrate.up
+    text: "Call Micrate.up(db) to apply pending migrations or Micrate.down(db) to roll back one. Micrate::Cli.run is the no-argument CLI dispatcher; set Micrate::DB.connection_url before it opens a connection."
