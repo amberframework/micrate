@@ -22,6 +22,9 @@ executables:
 dependencies:
   db:
     github: crystal-lang/crystal-db
+    # Leave this runtime dependency versioned so driver semver ranges resolve.
+    # shard.lock pins the source and verifies its hash.
+    version: 0.14.0
 
 development_dependencies:
   spectator:
