@@ -14,13 +14,11 @@ module Micrate
   end
 
   def self.dbversion(db)
-    begin
-      rows = DB.get_versions_last_first_order(db)
-      return extract_dbversion(rows)
-    rescue Exception
-      DB.create_migrations_table(db)
-      return 0
-    end
+    rows = DB.get_versions_last_first_order(db)
+    extract_dbversion(rows)
+  rescue Exception
+    DB.create_migrations_table(db)
+    0
   end
 
   def self.up(db)
@@ -32,7 +30,7 @@ module Micrate
     end
 
     current = dbversion(db)
-    target = all_migrations.keys.sort.last
+    target = all_migrations.keys.sort!.last
     migrate(all_migrations, current, target, db)
   end
 
@@ -85,7 +83,7 @@ module Micrate
     Dir.mkdir_p dir
     File.write(filename, migration_template)
 
-    return filename
+    filename
   end
 
   def self.connection_url=(connection_url)
@@ -150,7 +148,7 @@ module Micrate
       # the given version is (likely) valid but we didn't find
       # anything before it.
       # return value must reflect that no migrations have been applied.
-      return 0
+      0
     else
       raise "no previous version found"
     end
@@ -161,7 +159,7 @@ module Micrate
       .select { |name| File.file? File.join(migrations_dir, name) }
       .select { |name| /^\d+.+\.sql$/ =~ name }
       .map { |name| Migration.from_file(name) }
-      .index_by { |migration| migration.version }
+      .index_by(&.version)
   end
 
   def self.migration_plan(status : Hash(Migration, Time?), current : Int, target : Int, direction)
@@ -177,12 +175,12 @@ module Micrate
 
     if direction == :forward
       all_versions.keys
-        .sort
+        .sort!
         .select { |v| v > current && v <= target }
     else
       all_versions.keys
-        .sort
-        .reverse
+        .sort!
+        .reverse!
         .select { |v| v <= current && v > target }
     end
   end
@@ -204,7 +202,7 @@ module Micrate
       end
     end
 
-    return 0
+    0
   end
 
   class UnorderedMigrationsException < Exception

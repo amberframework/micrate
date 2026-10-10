@@ -11,13 +11,11 @@ module Micrate
     end
 
     def self.connect
-      validate_connection_url
-      ::DB.connect(self.connection_url.not_nil!)
+      ::DB.connect(valid_connection_url)
     end
 
-    def self.connect(&block)
-      validate_connection_url
-      ::DB.open self.connection_url.not_nil! do |db|
+    def self.connect(&)
+      ::DB.open valid_connection_url do |db|
         yield db
       end
     end
@@ -50,14 +48,15 @@ module Micrate
     end
 
     private def self.dialect
-      validate_connection_url
-      @@dialect ||= Dialect.from_connection_url(self.connection_url.not_nil!)
+      @@dialect ||= Dialect.from_connection_url(valid_connection_url)
     end
 
-    private def self.validate_connection_url
-      if !self.connection_url
+    private def self.valid_connection_url : String
+      url = self.connection_url
+      if !url
         raise "No database connection URL is configured. Please set the DATABASE_URL environment variable."
       end
+      url
     end
   end
 end
