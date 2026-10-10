@@ -63,6 +63,25 @@ Spectator.describe Micrate do
       end
     end
   end
+
+  describe "Micrate::Runner and Micrate::DB compatibility" do
+    it "allows instantiating Runner with custom connection url" do
+      runner = Micrate::Runner.new("sqlite3:test.db")
+      runner.connection_url.should eq("sqlite3:test.db")
+    end
+
+    it "provides backwards compatible Micrate::DB facade" do
+      original_url = Micrate.connection_url
+      begin
+        Micrate::DB.connection_url = "sqlite3:test_facade.db"
+        Micrate::DB.connection_url.should eq("sqlite3:test_facade.db")
+        Micrate.connection_url.should eq("sqlite3:test_facade.db")
+        Micrate.default_runner.connection_url.should eq("sqlite3:test_facade.db")
+      ensure
+        Micrate.connection_url = original_url
+      end
+    end
+  end
 end
 
 def sample_migrations

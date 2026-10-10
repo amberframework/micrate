@@ -2,44 +2,47 @@ require "db"
 require "./db/*"
 
 module Micrate
-  module DB
-    class_getter connection_url : String? { ENV["DATABASE_URL"]? }
+  class Runner
+    getter connection_url : String
+    getter dialect : DB::Dialect
 
-    def self.connection_url=(connection_url)
-      @@dialect = nil
-      @@connection_url = connection_url
+    def initialize(connection_url : String? = ENV["DATABASE_URL"]?)
+      url = connection_url
+      if !url
+        raise "No database connection URL is configured. Please set the DATABASE_URL environment variable."
+      end
+      @connection_url = url
+      @dialect = DB::Dialect.from_connection_url(@connection_url)
     end
 
-    def self.connect
-      validate_connection_url
-      ::DB.connect(self.connection_url.not_nil!)
+    def connect
+      ::DB.connect(@connection_url)
     end
 
-    def self.connect(&block)
-      validate_connection_url
-      ::DB.open self.connection_url.not_nil! do |db|
+    def connect(&)
+      ::DB.open(@connection_url) do |db|
         yield db
       end
     end
 
-    def self.get_versions_last_first_order(db)
+    def get_versions_last_first_order(db)
       db.query_all "SELECT version_id, is_applied from micrate_db_version ORDER BY id DESC", as: {Int64, Bool}
     end
 
-    def self.create_migrations_table(db)
+    def create_migrations_table(db)
       dialect.query_create_migrations_table(db)
     end
 
-    def self.record_migration(migration, direction, db)
+    def record_migration(migration, direction, db)
       is_applied = direction == :forward
       dialect.query_record_migration(migration, is_applied, db)
     end
 
-    def self.exec(statement, db)
+    def exec(statement, db)
       db.exec(statement)
     end
 
-    def self.get_migration_status(migration, db) : Time?
+    def get_migration_status(migration, db) : Time?
       rows = dialect.query_migration_status(migration, db)
 
       if !rows.empty? && rows[0][1]
@@ -49,14 +52,112 @@ module Micrate
       end
     end
 
-    private def self.dialect
-      validate_connection_url
-      @@dialect ||= Dialect.from_connection_url(self.connection_url.not_nil!)
+    def dbversion(db)
+      rows = get_versions_last_first_order(db)
+      Micrate.extract_dbversion(rows)
+    rescue Exception
+      create_migrations_table(db)
+      0
     end
 
-    private def self.validate_connection_url
-      if !self.connection_url
-        raise "No database connection URL is configured. Please set the DATABASE_URL environment variable."
+    def up(db)
+      all_migrations = Micrate.migrations_by_version
+
+      if all_migrations.size == 0
+        Log.warn { "No migrations found!" }
+        return
+      end
+
+      current = dbversion(db)
+      target = all_migrations.keys.sort!.last
+      migrate(all_migrations, current, target, db)
+    end
+
+    def down(db)
+      all_migrations = Micrate.migrations_by_version
+
+      current = dbversion(db)
+      target = Micrate.previous_version(current, all_migrations.keys)
+      migrate(all_migrations, current, target, db)
+    end
+
+    def redo(db)
+      all_migrations = Micrate.migrations_by_version
+
+      current = dbversion(db)
+      previous = Micrate.previous_version(current, all_migrations.keys)
+
+      if migrate(all_migrations, current, previous, db) == :success
+        migrate(all_migrations, previous, current, db)
+      end
+    end
+
+    def migration_status(db) : Hash(Migration, Time?)
+      # ensure that migration table exists
+      dbversion(db)
+      migration_status(Micrate.migrations_by_version.values, db)
+    end
+
+    def migration_status(migrations : Array(Migration), db) : Hash(Migration, Time?)
+      ({} of Migration => Time?).tap do |ret|
+        migrations.each do |m|
+          ret[m] = get_migration_status(m, db)
+        end
+      end
+    end
+
+    private def migrate(all_migrations : Hash(Int, Migration), current : Int, target : Int, db)
+      direction = current < target ? :forward : :backwards
+
+      status = migration_status(all_migrations.values, db)
+      plan = Micrate.migration_plan(status, current, target, direction)
+
+      if plan.empty?
+        Log.info { "No migrations to run. current version: #{current}" }
+        return :nop
+      end
+
+      Log.info { "Migrating db, current version: #{current}, target: #{target}" }
+
+      plan.each do |version|
+        migration = all_migrations[version]
+
+        # Wrap migration in a transaction
+        db.transaction do |tx|
+          migration.statements(direction).each do |stmt|
+            tx.connection.exec(stmt)
+          end
+
+          record_migration(migration, direction, tx.connection)
+
+          tx.commit
+          Log.info { "OK   #{migration.name}" }
+        rescue e : Exception
+          tx.rollback
+          Log.error(exception: e) { "An error occurred executing migration #{migration.version}." }
+          return :error
+        end
+      end
+      :success
+    end
+  end
+
+  module DB
+    def self.connection_url : String?
+      Micrate.connection_url
+    end
+
+    def self.connection_url=(url : String?)
+      Micrate.connection_url = url
+    end
+
+    def self.connect
+      Micrate.default_runner.connect
+    end
+
+    def self.connect(&)
+      Micrate.default_runner.connect do |db|
+        yield db
       end
     end
   end

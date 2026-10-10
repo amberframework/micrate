@@ -5,14 +5,15 @@ module Micrate
     Log = ::Log.for(self)
 
     def self.drop_database
-      url = Micrate::DB.connection_url.to_s
+      url = Micrate.connection_url || ENV["DATABASE_URL"]? || raise "DATABASE_URL not set"
       if url.starts_with? "sqlite3:"
         path = url.gsub("sqlite3:", "")
         File.delete(path)
         Log.info { "Deleted file #{path}" }
       else
-        name = set_database_to_schema url
-        Micrate::DB.connect do |db|
+        root_url, name = extract_schema_name url
+        runner = Micrate::Runner.new(root_url)
+        runner.connect do |db|
           db.exec "DROP DATABASE IF EXISTS #{name};"
         end
         Log.info { "Dropped database #{name}" }
@@ -20,51 +21,57 @@ module Micrate
     end
 
     def self.create_database
-      url = Micrate::DB.connection_url.to_s
+      url = Micrate.connection_url || ENV["DATABASE_URL"]? || raise "DATABASE_URL not set"
       if url.starts_with? "sqlite3:"
         Log.info { "For sqlite3, the database will be created during the first migration." }
       else
-        name = set_database_to_schema url
-        Micrate::DB.connect do |db|
+        root_url, name = extract_schema_name url
+        runner = Micrate::Runner.new(root_url)
+        runner.connect do |db|
           db.exec "CREATE DATABASE #{name};"
         end
         Log.info { "Created database #{name}" }
       end
     end
 
-    def self.set_database_to_schema(url)
+    def self.extract_schema_name(url)
       uri = URI.parse(url)
       if path = uri.path
-        Micrate::DB.connection_url = url.gsub(path, "/#{uri.scheme}")
-        path.gsub("/", "")
+        root_url = url.gsub(path, "/#{uri.scheme}")
+        {root_url, path.gsub("/", "")}
       else
         Log.error { "Could not determine database name" }
+        {url, ""}
       end
     end
 
     def self.run_up
-      Micrate::DB.connect do |db|
-        Micrate.up(db)
+      runner = Micrate.default_runner
+      runner.connect do |db|
+        runner.up(db)
       end
     end
 
     def self.run_down
-      Micrate::DB.connect do |db|
-        Micrate.down(db)
+      runner = Micrate.default_runner
+      runner.connect do |db|
+        runner.down(db)
       end
     end
 
     def self.run_redo
-      Micrate::DB.connect do |db|
-        Micrate.redo(db)
+      runner = Micrate.default_runner
+      runner.connect do |db|
+        runner.redo(db)
       end
     end
 
     def self.run_status
-      Micrate::DB.connect do |db|
+      runner = Micrate.default_runner
+      runner.connect do |db|
         Log.info { "Applied At                  Migration" }
         Log.info { "=======================================" }
-        Micrate.migration_status(db).each do |migration, migrated_at|
+        runner.migration_status(db).each do |migration, migrated_at|
           ts = migrated_at.nil? ? "Pending" : migrated_at.to_s
           Log.info { "%-24s -- %s\n" % [ts, migration.name] }
         end
@@ -81,9 +88,10 @@ module Micrate
     end
 
     def self.run_dbversion
-      Micrate::DB.connect do |db|
+      runner = Micrate.default_runner
+      runner.connect do |db|
         begin
-          Log.info { Micrate.dbversion(db) }
+          Log.info { runner.dbversion(db) }
         rescue
           raise "Could not read dbversion. Please make sure the database exists and verify the connection URL."
         end

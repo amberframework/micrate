@@ -69,16 +69,16 @@ module Micrate
       s.split("--")[0].strip.ends_with? ";"
     end
 
-    def self.from_file(file_name)
+    def self.from_file(file_name : String)
       full_path = File.join(Micrate.migrations_dir, file_name)
       version = file_name.split("_")[0].to_i64
       new(version, file_name, File.read(full_path))
     end
 
     def self.from_version(version)
-      file_name = Dir.entries(Micrate.migrations_dir)
-        .find { |name| name.starts_with? version.to_s }
-        .not_nil!
+      file_name = Dir.entries(Micrate.migrations_dir).find(&.starts_with?(version.to_s))
+      raise "Migration #{version} not found" unless file_name
+
       self.from_file(file_name)
     end
   end
