@@ -11,7 +11,7 @@ module Micrate::DB
     end
 
     def query_migration_status(migration, db)
-      db.query_all "SELECT tstamp, is_applied FROM micrate_db_version WHERE version_id=? ORDER BY tstamp DESC LIMIT 1", migration.version, as: {Time, Bool}
+      db.query_all "SELECT tstamp, is_applied FROM micrate_db_version WHERE version_id=? ORDER BY id DESC LIMIT 1", migration.version, as: {Time, Bool}
     end
 
     def query_record_migration(migration, is_applied, db)
