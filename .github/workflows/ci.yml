@@ -1,0 +1,201 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Format, compile, lint and specs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Refresh apt package index
+        # install-crystal runs apt-get install without an update, so a stale
+        # runner image index 404s on superseded packages.
+        run: sudo apt-get update
+      - uses: crystal-lang/install-crystal@d8ef131ecec0352ce0e39b81b0a6d95def58fe2f # v1
+        with:
+          crystal: 1.21.0
+      - name: Build pinned Minecart
+        run: scripts/install_pinned_minecart.sh
+      - name: Install dependencies from the committed lock
+        run: minecart install --frozen --skip-postinstall --skip-executables --skip-ai-docs --skip-ai-assistant
+      - name: Check formatting
+        run: crystal tool format --check src spec
+      - name: Compile every entry point
+        run: scripts/compile_entry_points.sh
+      - name: Run Ameba
+        # Ameba 1.7 installs no bin/ameba; build it from the locked source.
+        run: mkdir -p bin && crystal build lib/ameba/src/cli.cr -o bin/ameba && bin/ameba
+      - name: Run specs
+        run: crystal spec
+
+  macos:
+    name: Specs on Apple Silicon
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: crystal-lang/install-crystal@d8ef131ecec0352ce0e39b81b0a6d95def58fe2f # v1
+        with:
+          crystal: 1.21.0
+      - name: Build pinned Minecart
+        run: scripts/install_pinned_minecart.sh
+      - name: Install dependencies from the committed lock
+        run: minecart install --frozen --skip-postinstall --skip-executables --skip-ai-docs --skip-ai-assistant
+      - name: Compile every entry point
+        run: scripts/compile_entry_points.sh
+      - name: Run specs
+        run: crystal spec
+      - name: Run the command-line tool against SQLite
+        run: scripts/exercise_cli.sh
+        env:
+          DATABASE_URL: sqlite3:./micrate_ci.sqlite3
+
+  databases:
+    name: Command-line lifecycle on every database
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16@sha256:a3b7f434b2dc57ce85a67e171163eb8ab1a1ebcb39d27484661f26b1dfbe30d6
+        env:
+          POSTGRES_PASSWORD: micrate # secret-scan-gate:allow (local CI service credential)
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      mysql:
+        image: mysql:8.0@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b
+        env:
+          MYSQL_ROOT_PASSWORD: micrate # secret-scan-gate:allow (local CI service credential)
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping --protocol=tcp"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Refresh apt package index
+        run: sudo apt-get update
+      - uses: crystal-lang/install-crystal@d8ef131ecec0352ce0e39b81b0a6d95def58fe2f # v1
+        with:
+          crystal: 1.21.0
+      - name: Build pinned Minecart
+        run: scripts/install_pinned_minecart.sh
+      - name: Install dependencies from the committed lock
+        run: minecart install --frozen --skip-postinstall --skip-executables --skip-ai-docs --skip-ai-assistant
+      - name: Use the MySQL authentication the released driver supports
+        # crystal-mysql 0.18.0 has no caching_sha2_password, the MySQL 8 default.
+        run: mysql --host 127.0.0.1 --user root --password=micrate --execute "ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'micrate'" # secret-scan-gate:allow (local CI service credential)
+      - name: Run the command-line tool against SQLite
+        run: scripts/exercise_cli.sh
+        env:
+          DATABASE_URL: sqlite3:./micrate_ci.sqlite3
+      - name: Run the command-line tool against PostgreSQL
+        run: scripts/exercise_cli.sh
+        env:
+          DATABASE_URL: postgres://postgres:micrate@localhost:5432/micrate_ci # secret-scan-gate:allow (local CI service credential)
+      - name: Run the command-line tool against MySQL
+        run: scripts/exercise_cli.sh
+        env:
+          DATABASE_URL: mysql://root:micrate@127.0.0.1:3306/micrate_ci # secret-scan-gate:allow (local CI service credential)
+
+  dependency:
+    name: Installed as a dependency
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Refresh apt package index
+        run: sudo apt-get update
+      - uses: crystal-lang/install-crystal@d8ef131ecec0352ce0e39b81b0a6d95def58fe2f # v1
+        with:
+          crystal: 1.21.0
+      - name: Build pinned Minecart
+        run: scripts/install_pinned_minecart.sh
+      - name: Install into a new application and run bin/micrate
+        run: scripts/exercise_as_dependency.sh
+
+  crystal-alpha:
+    # The compiler Amber V2 applications build with, from the pinned source
+    # commit (its Git tree is checked too), bootstrapped inside the official
+    # Crystal build image pinned by digest.
+    name: crystal-alpha 1.21.0-incremental-1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    container:
+      image: crystallang/crystal:1.22.1-build@sha256:037cc42d8a270f73754aeeca48cb2fcdaa5f883b24a7751ad994bd0fc465cee2
+    env:
+      CRYSTAL_ALPHA_COMMIT: 9c1e8ec64f6be6343e90d3979bc9536c4b050292 # tag v1.21.0-incremental-1
+      CRYSTAL_ALPHA_TREE: 4fdb7a4f547b5b6f6390f34279ac8a1ee60e7327
+      CRYSTAL: crystal
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: micrate
+          persist-credentials: false
+      - name: Checkout crystal-alpha source at the pinned commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: crimson-knight/crystal
+          ref: 9c1e8ec64f6be6343e90d3979bc9536c4b050292 # v1.21.0-incremental-1
+          path: crystal-alpha
+          persist-credentials: false
+      - name: Verify crystal-alpha commit and tree
+        working-directory: crystal-alpha
+        run: |
+          set -euo pipefail
+          git config --global --add safe.directory '*'
+          test "$(git rev-parse HEAD)" = "$CRYSTAL_ALPHA_COMMIT"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$CRYSTAL_ALPHA_TREE"
+          test -z "$(git status --porcelain)"
+      - name: Build crystal-alpha
+        working-directory: crystal-alpha
+        run: |
+          set -euo pipefail
+          make crystal release=1 interpreter=1 FLAGS=--no-debug \
+            CRYSTAL_CONFIG_BUILD_COMMIT="${CRYSTAL_ALPHA_COMMIT:0:7}"
+          echo "$PWD/bin" >> "$GITHUB_PATH"
+      - name: Confirm compiler version
+        run: crystal --version | grep -q '^Crystal 1\.21\.0 \[9c1e8ec\]'
+      - name: Build pinned Minecart
+        working-directory: micrate
+        run: scripts/install_pinned_minecart.sh
+      - name: Install dependencies from the committed lock
+        working-directory: micrate
+        run: minecart install --frozen --skip-postinstall --skip-executables --skip-ai-docs --skip-ai-assistant
+      - name: Check formatting
+        working-directory: micrate
+        run: crystal tool format --check src spec
+      - name: Compile every entry point
+        working-directory: micrate
+        run: scripts/compile_entry_points.sh
+      - name: Compile the API card probes
+        working-directory: micrate
+        run: scripts/compile_api_card_probes.sh
+      - name: Run specs
+        working-directory: micrate
+        run: crystal spec

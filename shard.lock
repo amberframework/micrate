@@ -1,0 +1,32 @@
+version: 2.0
+shards:
+  ameba:
+    git: https://github.com/crystal-ameba/ameba.git
+    version: 1.7.0-dev+git.commit.cdd58b34b0d8a9c785d67183a7a8f07541549e55
+    checksum: sha256-v2:c2cc6014acaf844d9734a1d8be64b4fbb78412d5b7bba6eb2bf8b1462018b272
+
+  db:
+    git: https://github.com/crystal-lang/crystal-db.git
+    version: 0.15.0
+    checksum: sha256-v2:e7bed32e11b4d05384a5f2795808ac86682594a390c3c7b5a12d7e961f7b07f8
+
+  mysql:
+    git: https://github.com/crystal-lang/crystal-mysql.git
+    version: 0.18.0+git.commit.150846c8b6db78912f3245947b49a1e2856a5ec8
+    checksum: sha256-v2:328e17148975750a5763e194b5d6e9b1a84f50446e1d54003e53a099afc242bb
+
+  pg:
+    git: https://github.com/will/crystal-pg.git
+    version: 0.31.0+git.commit.8b63363430edb5c09d5612f9776e6398efe48bce
+    checksum: sha256-v2:0de28ad3dfaaa3c53a5f100bc7e9d6f3d7bc1c858c30a6e941c74f56501f3ba3
+
+  spectator:
+    git: https://gitlab.com/arctic-fox/spectator.git
+    version: 0.11.7+git.commit.4a630b1ebf1ea4324b3c4f0230376783ce5a92a1
+    checksum: sha256-v2:631c6ba82d0fe70f7eec0872e03c9432728ffd18db40e15f80283e2438288345
+
+  sqlite3:
+    git: https://github.com/crystal-lang/crystal-sqlite3.git
+    version: 0.24.0+git.commit.91f6c13d8f1df08f2659dfce7261ec9c40666302
+    checksum: sha256-v2:a9ce0fcbdb63c08a80adf5dc1633994dce711b8bcd970d4315bb9afb679b5e55
+

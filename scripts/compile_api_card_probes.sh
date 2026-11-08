@@ -17,7 +17,7 @@ warning_count=0
 
 while IFS= read -r probe_path; do
   probe_count=$((probe_count + 1))
-  if output=$(crystal-alpha build --no-codegen --no-color "$probe_path" 2>&1); then
+  if output=$("${CRYSTAL:-crystal-alpha}" build --no-codegen --no-color "$probe_path" 2>&1); then
     warning_lines=$(printf '%s\n' "$output" | grep -Eic 'warning:' || true)
     warning_count=$((warning_count + warning_lines))
     if (( warning_lines > 0 )); then
