@@ -30,6 +30,8 @@ jobs:
         run: minecart install --frozen --skip-postinstall --skip-executables --skip-ai-docs --skip-ai-assistant
       - name: Check formatting
         run: crystal tool format --check src spec
+      # Crystal only type-checks code a program reaches, so specs alone can pass
+      # while the command-line tool does not compile.
       - name: Compile every entry point
         run: scripts/compile_entry_points.sh
       - name: Run Ameba
@@ -62,6 +64,9 @@ jobs:
         env:
           DATABASE_URL: sqlite3:./micrate_ci.sqlite3
 
+  # Each database behaves differently: transactions around schema changes,
+  # timestamp precision and SQL dialect. The specs never connect to one, so this
+  # job is the only proof that the migration commands work.
   databases:
     name: Command-line lifecycle on every database
     runs-on: ubuntu-24.04
@@ -118,6 +123,9 @@ jobs:
         env:
           DATABASE_URL: mysql://root:micrate@127.0.0.1:3306/micrate_ci # secret-scan-gate:allow (local CI service credential)
 
+  # Applications get Micrate through shards, and its bin/micrate compiles the
+  # command-line tool on first use. A defect there reaches users without
+  # affecting any check run inside this repository.
   dependency:
     name: Installed as a dependency
     runs-on: ubuntu-24.04

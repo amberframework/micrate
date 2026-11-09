@@ -2,6 +2,10 @@
 # Installs Micrate into a new application the way a user does, then runs the
 # installed `bin/micrate` wrapper, which compiles the command-line tool on its
 # first run from inside lib/micrate.
+#
+# This path differs from a compile inside this repository: the wrapper builds
+# lib/micrate/src/micrate-cli.cr from the application's directory, using only
+# the database drivers that application installed.
 set -euo pipefail
 
 repository_root="$(cd "$(dirname "$0")/.." && pwd)"

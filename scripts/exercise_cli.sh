@@ -69,6 +69,9 @@ assert_pending_migration_count_is 2
 assert_database_version_is "$second_migration_version"
 assert_pending_migration_count_is 0
 
+# This rollback lands in the same second as the apply above on purpose. On MySQL
+# that makes the two history rows tie on their timestamp, which is how a
+# migration that was rolled back came to be reported as applied.
 "$cli_binary" down
 assert_database_version_is "$first_migration_version"
 assert_pending_migration_count_is 1
