@@ -27,4 +27,19 @@ dependencies:
 development_dependencies:
   spectator:
     gitlab: arctic-fox/spectator
-    version: ~> 0.11.3
+    version: "0.11.7"
+    commit: 4a630b1ebf1ea4324b3c4f0230376783ce5a92a1
+  # Drivers install in development only, so CI can exercise every dialect.
+  # Each is resolved to an exact version and hash in shard.lock.
+  pg:
+    github: will/crystal-pg
+    version: "0.31.0"
+    commit: 8b63363430edb5c09d5612f9776e6398efe48bce
+  mysql:
+    github: crystal-lang/crystal-mysql
+    version: "0.18.0"
+    commit: 150846c8b6db78912f3245947b49a1e2856a5ec8
+  sqlite3:
+    github: crystal-lang/crystal-sqlite3
+    version: "0.24.0"
+    commit: 91f6c13d8f1df08f2659dfce7261ec9c40666302

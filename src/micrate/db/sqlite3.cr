@@ -15,7 +15,10 @@ module Micrate::DB
     end
 
     def query_migration_status(migration, db)
-      db.query_all "SELECT tstamp, is_applied FROM micrate_db_version WHERE version_id=? ORDER BY tstamp DESC LIMIT 1", migration.version, as: {Time, Bool}
+      # The newest history row decides whether this migration counts as applied.
+      # Sort by id, the order the rows were written, as `dbversion` does. tstamp
+      # comes from the application's clock, which can repeat a time or move back.
+      db.query_all "SELECT tstamp, is_applied FROM micrate_db_version WHERE version_id=? ORDER BY id DESC LIMIT 1", migration.version, as: {Time, Bool}
     end
 
     def query_record_migration(migration, is_applied, db)

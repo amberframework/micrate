@@ -1,0 +1,32 @@
+# The rules amber-lsp applies to Micrate's own code, beyond its built-in checks.
+#
+# Each one is a warning for now, so existing code prints without failing CI.
+# Move a rule to `error` once its findings are fixed, and CI starts enforcing it.
+custom_rules:
+  - id: library/typed-raise
+    description: Raise a named error from Micrate's own hierarchy
+    # A string raises plain Exception, so an application can only catch this
+    # failure by also catching every other failure in its program. The pattern
+    # skips `{% raise %}`, which is a compile-time message to the programmer.
+    severity: warning
+    applies_to: ["src/micrate.cr", "src/micrate/**"]
+    pattern: '^(?!.*\{%)[^#]*\braise\s*\(?\s*"'
+    message: "Raise a named error class, so callers can rescue this failure on its own."
+
+  - id: library/environment-read
+    description: Take configuration from the caller
+    # An application may configure its database in code and never set this
+    # variable. The command line is the one place that owns the environment.
+    severity: warning
+    applies_to: ["src/micrate.cr", "src/micrate/db.cr", "src/micrate/db/**", "src/micrate/migration.cr"]
+    pattern: '\bENV\['
+    message: "Accept this value through Micrate's configuration, and read ENV at the command line."
+
+  - id: library/broad-rescue
+    description: Rescue the failure this code knows how to handle
+    # Catching everything makes a typo, a lost connection and a bad query look
+    # the same, and the real error never reaches the person debugging it.
+    severity: warning
+    applies_to: ["src/micrate.cr", "src/micrate/**"]
+    pattern: '^\s*rescue\s*$|\brescue\s+(\w+\s*:\s*)?Exception\s*$'
+    message: "Rescue a named error, or re-raise with this one as the cause."

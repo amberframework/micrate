@@ -7,7 +7,10 @@ probe_directory="$repository_root/spec/api_card_probes"
 
 cd "$repository_root"
 
-export CRYSTAL_PATH="$repository_root/src:$repository_root/lib"
+crystal_compiler="${CRYSTAL:-crystal-alpha}"
+# Setting CRYSTAL_PATH replaces the compiler's default search path, so the
+# compiler's own path goes on the end to keep the standard library findable.
+export CRYSTAL_PATH="$repository_root/src:$repository_root/lib:$("$crystal_compiler" env CRYSTAL_PATH)"
 export CRYSTAL_WORKERS=1
 export CRYSTAL_CACHE_DIR="$repository_root/.crystal-cache/api-card-probes"
 
@@ -17,7 +20,7 @@ warning_count=0
 
 while IFS= read -r probe_path; do
   probe_count=$((probe_count + 1))
-  if output=$(crystal-alpha build --no-codegen --no-color "$probe_path" 2>&1); then
+  if output=$("$crystal_compiler" build --no-codegen --no-color "$probe_path" 2>&1); then
     warning_lines=$(printf '%s\n' "$output" | grep -Eic 'warning:' || true)
     warning_count=$((warning_count + warning_lines))
     if (( warning_lines > 0 )); then
