@@ -34,9 +34,10 @@ jobs:
       # while the command-line tool does not compile.
       - name: Compile every entry point
         run: scripts/compile_entry_points.sh
-      - name: Run Ameba
-        # Ameba 1.7 installs no bin/ameba; build it from the locked source.
-        run: mkdir -p bin && crystal build lib/ameba/src/cli.cr -o bin/ameba && bin/ameba
+      - name: Install pinned amber-lsp
+        run: scripts/install_pinned_amber_lsp.sh
+      - name: Check every source file with amber-lsp
+        run: scripts/check_with_amber_lsp.sh
       - name: Run specs
         run: crystal spec
 

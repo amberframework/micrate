@@ -43,7 +43,3 @@ development_dependencies:
     github: crystal-lang/crystal-sqlite3
     version: "0.24.0"
     commit: 91f6c13d8f1df08f2659dfce7261ec9c40666302
-  ameba:
-    github: crystal-ameba/ameba
-    version: "1.7.0-dev"
-    commit: cdd58b34b0d8a9c785d67183a7a8f07541549e55
