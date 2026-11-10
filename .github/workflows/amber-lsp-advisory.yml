@@ -15,9 +15,9 @@ jobs:
     name: amber-lsp on changed lines (advisory)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    # Advisory until the rule set reaches its target and a live pull request
-    # shows the finding volume is workable; then this job becomes required.
-    continue-on-error: true
+    # Findings stay advisory through --advisory, which exits 0 on findings.
+    # A failed amber-lsp build or a checker exit 2 still fails this job, so a
+    # broken linter reads red. The job is not a required check.
     steps:
       - name: Download source with history for the changed-line comparison
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: amberframework/amber_cli
-          ref: 5f0a9a656a156e0b33adfce220d8699a6f296e9a
+          ref: ede25163faa5574a0b7d28c83a97eef288d9f272 # amberframework/amber_cli#54 reviewed head
           path: .amber_cli_for_lint
           persist-credentials: false
       - name: Refresh apt package index
