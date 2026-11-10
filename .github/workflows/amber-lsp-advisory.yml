@@ -41,7 +41,7 @@ jobs:
           crystal: 1.21.0
       - name: Build amber-lsp
         working-directory: .amber_cli_for_lint
-        run: crystal build src/amber_lsp.cr -o "$RUNNER_TEMP/amber-lsp"
+        run: crystal build src/amber_lsp_deliberate_break.cr -o "$RUNNER_TEMP/amber-lsp"
       - name: Check changed lines
         run: >-
           "$RUNNER_TEMP/amber-lsp" check
