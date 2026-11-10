@@ -30,3 +30,5 @@ custom_rules:
     applies_to: ["src/micrate.cr", "src/micrate/**"]
     pattern: '^\s*rescue\s*$|\brescue\s+(\w+\s*:\s*)?Exception\s*$'
     message: "Rescue a named error, or re-raise with this one as the cause."
+
+exclude_patterns: deliberate-break-scalar
